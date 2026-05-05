@@ -1,0 +1,98 @@
+﻿@model IEnumerable<projekt.NET.Models.UserGame>
+
+@{
+    ViewData["Title"] = "Moja Biblioteka";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-info fw-bold">📚 Moja Biblioteka</h2>
+        <!-- Przycisk otwierający Modal do dodawania gry -->
+        <button type="button" class="btn btn-info fw-bold text-dark" data-bs-toggle="modal" data-bs-target="#addGameModal">
+            + Dodaj Grę
+        </button>
+    </div>
+
+    <!-- Siatka gier -->
+    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+        @foreach (var game in Model)
+        {
+            <div class="col">
+                <div class="card bg-dark border-secondary h-100 card-game text-light">
+                    <img src="@game.ImageUrl" class="card-img-top" alt="Okładka @game.Title" style="height: 300px; object-fit: cover;">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title text-info text-truncate" title="@game.Title">@game.Title</h5>
+
+                        <div class="mt-auto">
+                            <p class="mb-1">
+                                <strong>Status:</strong>
+                                @if (game.Status == "Ukończona")
+                                {
+                                    <span class="badge bg-success">@game.Status</span>
+                                }
+                                else if (game.Status == "W trakcie")
+                                {
+
+                                    <span class="badge bg-warning text-dark">@game.Status</span>
+                                }
+                                else
+                                {
+
+                                    <span class="badge bg-danger">@game.Status</span>
+                                }
+                            </p>
+                            <p class="mb-1"><strong>Ocena:</strong> <span class="text-warning">★</span> @game.Rating / 10</p>
+                            <p class="mb-0"><strong>Czas gry:</strong> @game.PlayTimeHours h</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal - Formularz Dodawania Gry -->
+<div class="modal fade" id="addGameModal" tabindex="-1" aria-labelledby="addGameModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-info">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-info" id="addGameModalLabel">Dodaj nową grę do kolekcji</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-controller="Library" asp-action="AddGame" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="Title" class="form-label">Tytuł gry</label>
+                        <input type="text" class="form-control bg-dark text-light border-secondary" id="Title" name="Title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="Status" class="form-label">Status</label>
+                        <select class="form-select bg-dark text-light border-secondary" id="Status" name="Status" required>
+                            <option value="W trakcie">W trakcie</option>
+                            <option value="Ukończona">Ukończona</option>
+                            <option value="Porzucona">Porzucona</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="Rating" class="form-label">Ocena (1-10)</label>
+                            <input type="number" class="form-control bg-dark text-light border-secondary" id="Rating" name="Rating" min="1" max="10" value="7">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="PlayTimeHours" class="form-label">Czas gry (h)</label>
+                            <input type="number" class="form-control bg-dark text-light border-secondary" id="PlayTimeHours" name="PlayTimeHours" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ImageUrl" class="form-label">URL okładki (opcjonalnie)</label>
+                        <input type="url" class="form-control bg-dark text-light border-secondary" id="ImageUrl" name="ImageUrl" placeholder="https://...">
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Anuluj</button>
+                    <button type="submit" class="btn btn-info fw-bold text-dark">Zapisz w bibliotece</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

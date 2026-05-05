@@ -1,22 +1,60 @@
 html {
-  font-size: 14px;
+    font-size: 14px;
+    position: relative;
+    min-height: 100%;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+    html {
+        font-size: 16px;
+    }
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
+    background-color: #121212 !important; /* Głęboka czerń */
+    color: #e0e0e0 !important; /* Jasnoszary tekst, nie męczy wzroku */
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Dostosowanie nagłówków */
+h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+}
+
+/* Własny styl dla navbaru */
+.custom-navbar {
+    background-color: #1a1a1a !important;
+}
+
+.hover-info:hover {
+    color: #0dcaf0 !important;
+    transition: color 0.3s ease;
+}
+
+/* Akcenty dla kart gier (przydadzą się później) */
+.card-game {
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 8px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .card-game:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(13, 202, 240, 0.2);
+        border-color: #0dcaf0;
+    }
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem #121212, 0 0 0 0.25rem #0dcaf0;
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    line-height: 60px;
+    background-color: #1a1a1a;
 }

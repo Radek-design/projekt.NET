@@ -24,7 +24,7 @@
         public Producer? Producer { get; set; }
 
         //relacja wiele do wielu z Platform - jedna gra może być na wielu platformach, a jedna platforma może mieć wiele gier
-        public ICollection<Platfrom> Platfroms { get; set; } = new List<Platfrom>();
+        public ICollection<Platform> Platforms { get; set; } = new List<Platform>();
 
         //relacja wiele do wielu z Genre - jedna gra może mieć wiele gatunków, a jeden gatunek może być przypisany do wielu gier
         public ICollection<Genre> Genres { get; set; } = new List<Genre>();

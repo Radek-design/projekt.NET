@@ -1,8 +1,8 @@
 ﻿
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using projekt.NET.Models;
 using projekt.NET.Models.Entities;
-
 public class AppDbContext : IdentityDbContext<ApplicationUser>
 {
     // Konstruktor

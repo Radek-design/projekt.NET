@@ -1,8 +1,16 @@
+using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var app = builder.Build();
 

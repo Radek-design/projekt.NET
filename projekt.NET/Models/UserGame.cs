@@ -1,12 +1,22 @@
-﻿namespace projekt.NET.Models
+﻿using projekt.NET.Models.Entities;
+
+namespace projekt.NET.Models
 {
     public class UserGame
     {
         public int Id { get; set; }
-        public string Title { get; set; }
-        public string Status { get; set; } // Zgodnie z projektem: Ukończona, W trakcie, Porzucona
-        public int? Rating { get; set; } // Ocena w skali 1-10
+
+        // Relacja z użytkownikiem (kto dodał grę)
+        public string UserId { get; set; } = string.Empty;
+        public ApplicationUser? User { get; set; }
+
+        // Relacja z grą (jaka gra została dodana)
+        public int GameId { get; set; }
+        public Game? Game { get; set; }
+
+        // Dane specyficzne dla kolekcji użytkownika
+        public string Status { get; set; } = string.Empty; // Ukończona, W trakcie, Porzucona
+        public int? Rating { get; set; } // Indywidualna ocena użytkownika (1-10)
         public int PlayTimeHours { get; set; }
-        public string ImageUrl { get; set; }
     }
 }

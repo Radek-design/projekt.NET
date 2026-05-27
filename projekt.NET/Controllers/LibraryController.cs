@@ -1,39 +1,76 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using projekt.NET.Models;
+using projekt.NET.Models.Entities;
+using System.Linq;
+using System.Security.Claims;
 
 namespace projekt.NET.Controllers
 {
     public class LibraryController : Controller
     {
-        // Tymczasowa symulacja bazy danych
-        private static List<UserGame> _myGames = new List<UserGame>
-        {
-            new UserGame { Id = 1, Title = "Wiedźmin 3: Dziki Gon", Status = "Ukończona", Rating = 10, PlayTimeHours = 120, ImageUrl = "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wyy.jpg" },
-            new UserGame { Id = 2, Title = "Cyberpunk 2077", Status = "W trakcie", Rating = 8, PlayTimeHours = 45, ImageUrl = "https://images.igdb.com/igdb/image/upload/t_cover_big/co2mvt.jpg" },
-            new UserGame { Id = 3, Title = "Gothic", Status = "Ukończona", Rating = 9, PlayTimeHours = 60, ImageUrl = "https://images.igdb.com/igdb/image/upload/t_cover_big/co2k9x.jpg" }
-        };
+        private readonly AppDbContext _context;
 
-        // Widok główny biblioteki
-        public IActionResult Index()
+        // Wstrzykujemy bazę danych przez konstruktor
+        public LibraryController(AppDbContext context)
         {
-            return View(_myGames);
+            _context = context;
         }
 
-        // Akcja dodawania nowej gry (odbiera dane z formularza)
-        [HttpPost]
-        public IActionResult AddGame(UserGame newGame)
+        // Widok główny biblioteki - wyświetla gry zalogowanego użytkownika
+        public IActionResult Index()
         {
-            // Proste generowanie ID i przypisanie domyślnego obrazka, jeśli brak
-            newGame.Id = _myGames.Count > 0 ? _myGames.Max(g => g.Id) + 1 : 1;
+            // Pobieramy ID aktualnie zalogowanego użytkownika (z Identity)
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (string.IsNullOrWhiteSpace(newGame.ImageUrl))
+            if (userId == null)
             {
-                newGame.ImageUrl = "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png";
+                // Jeśli użytkownik nie jest zalogowany, możemy pokazać pustą listę lub przekierować do logowania
+                return View(new List<UserGame>());
             }
 
-            _myGames.Add(newGame);
+            // Pobieramy z bazy gry użytkownika, dołączając dane o samej grze (Include), aby mieć dostęp do Tytułu i Okładki
+            var myGames = _context.UserGames
+                .Include(ug => ug.Game)
+                .Where(ug => ug.UserId == userId)
+                .ToList();
 
-            // Po dodaniu odświeżamy stronę
+            return View(myGames);
+        }
+
+        // Akcja dodawania gry do biblioteki użytkownika
+        [HttpPost]
+        public IActionResult AddGame(int gameId, string status, int? rating, int playTimeHours)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+            {
+                return Challenge(); // Wymaga zalogowania
+            }
+
+            // Sprawdzamy, czy użytkownik nie ma już tej gry w swojej bibliotece
+            var alreadyExists = _context.UserGames.Any(ug => ug.UserId == userId && ug.GameId == gameId);
+            if (alreadyExists)
+            {
+                ModelState.AddModelError("", "Ta gra jest już w Twojej bibliotece.");
+                return RedirectToAction("Index");
+            }
+
+            // Tworzymy nowy obiekt powiązania
+            var userGame = new UserGame
+            {
+                UserId = userId,
+                GameId = gameId,
+                Status = status ?? "W trakcie",
+                Rating = rating,
+                PlayTimeHours = playTimeHours
+            };
+
+            // Baza danych automatycznie wygeneruje nowe ID dla wpisu
+            _context.UserGames.Add(userGame);
+            _context.SaveChanges();
+
             return RedirectToAction("Index");
         }
     }

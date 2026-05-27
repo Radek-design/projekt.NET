@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-
+using projekt.NET.Models.Entities;
 namespace projekt.NET.Models
 {
     public class Review
@@ -12,11 +12,11 @@ namespace projekt.NET.Models
 
         [Range(1, 10)]
         public int Rating { get; set; }
-
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Relacja z grą (zakładając, że masz model Game lub UserGame)
         public int GameId { get; set; }
+        public Game? Game { get; set; }
 
         // Relacja z użytkownikiem
         public string UserId { get; set; } = string.Empty;

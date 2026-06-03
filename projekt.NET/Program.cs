@@ -2,16 +2,26 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using projekt.NET.Data;
 using projekt.NET.Models.Entities;
+using projekt.NET.Repositories.Interface;
+using projekt.NET.Repositories.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// === BAZA DANYCH ===
+
+// === REPOZYTORIA ===
+// Scoped = nowa instancja na ka¿de ¿¹danie HTTP
+builder.Services.AddScoped<IGameRepository, GameRepository>();
+builder.Services.AddScoped<IProducerRepository, ProducerRepository>();
+builder.Services.AddScoped<IPlatformRepository, PlatformRepository>();
+builder.Services.AddScoped<IGenreRepository, GenreRepository>();
+
+//BAZA DANYCH
 // £¹czymy aplikacjê z SQL Server przez connection string z appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// === IDENTITY (logowanie i role) ===
+//IDENTITY (logowanie i role)
 // Konfigurujemy system logowania - u¿ytkownik to ApplicationUser, role to IdentityRole
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -23,7 +33,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
-// === PRZEKIEROWANIA ===
+//PRZEKIEROWANIA
 // Gdzie kierowaæ u¿ytkownika przy logowaniu, wylogowaniu i braku uprawnieñ
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -32,7 +42,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Account/AccessDenied";
 });
 
-// === AUTOMAPPER ===
+//AUTOMAPPER
 // Biblioteka do mapowania obiektów np. encji na DTO i odwrotnie
 builder.Services.AddAutoMapper(typeof(Program));
 

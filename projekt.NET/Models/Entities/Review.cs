@@ -23,3 +23,4 @@ namespace projekt.NET.Models
         public ApplicationUser? User { get; set; }
     }
 }
+

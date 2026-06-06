@@ -4,8 +4,11 @@ using projekt.NET.Data;
 using projekt.NET.Models.Entities;
 using projekt.NET.Repositories.Interface;
 using projekt.NET.Repositories.Implementations;
+using projekt.NET.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddHttpClient<RawgService>();
 
 
 // === REPOZYTORIA ===
@@ -68,5 +71,17 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+
+// Tworzymy domyœlne role jeœli nie istniej¹
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    foreach (var role in new[] { "User", "Moderator" })
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+            await roleManager.CreateAsync(new IdentityRole(role));
+    }
+}
 
 app.Run();

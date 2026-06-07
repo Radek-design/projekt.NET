@@ -1,29 +1,65 @@
-﻿@{
+﻿@model IEnumerable<projekt.NET.Controllers.NewsItem>
+@{
     ViewData["Title"] = "Strona Główna";
 }
 
-<div class="text-center py-5">
-    <h1 class="display-3 fw-bold text-info mb-4">Witaj w Bazie Gier</h1>
-    <p class="lead mb-5">Odkrywaj nowe tytuły, zarządzaj swoją kolekcją, oceniaj i dziel się opiniami z innymi graczami.</p>
+<div class="container py-3">
+    <div class="text-center mb-5 py-3 bg-dark border border-secondary rounded shadow-sm">
+        <h1 class="display-4 fw-bold text-info">Witaj w Centrum Gier</h1>
+        <p class="lead text-muted mb-0">Twoje zintegrowane miejsce na wiadomości, kolekcje gier oraz statystyki.</p>
+    </div>
 
-    <!-- Poniżej zostawiamy kafle o projekcie -->
-    <div class="row mt-5">
-        <div class="col-md-4">
-            <div class="p-4 bg-dark border border-secondary rounded h-100 card-game">
-                <h3>🕹️ Ogromny Katalog</h3>
-                <p>Przeglądaj gry, platformy i producentów. Importuj dane automatycznie!</p>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+            <h3 class="text-info mb-0"><i class="bi bi-newspaper"></i> Najnowsze Wiadomości</h3>
+                <form action="/Home/GenerateAiNews" method="post" class="m-0">
+                    <button type="submit" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-magic"></i> Generuj przez AI
+                    </button>
+                </form>
             </div>
+            
+            @if (Model != null && Model.Any())
+            {
+                foreach (var news in Model)
+                {
+                    <div class="card mb-4 bg-dark text-white border-secondary shadow-sm p-3">
+                        <h4 class="text-info">@news.Title</h4>
+                        <p>@news.Summary</p>
+                        <small class="text-muted">
+                            Źródło: <strong class="text-warning">@news.Source</strong> | Dodano: @news.PublishDate.ToString("dd.MM.yyyy")
+                        </small>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-secondary">Brak nowych wiadomości w tym momencie.</div>
+            }
         </div>
+
         <div class="col-md-4">
-            <div class="p-4 bg-dark border border-secondary rounded h-100 card-game">
-                <h3>📚 Twoja Biblioteka</h3>
-                <p>Oznaczaj gry jako "Ukończone", "W trakcie" i eksportuj kolekcję do PDF/Excel.</p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="p-4 bg-dark border border-secondary rounded h-100 card-game">
-                <h3>🤖 Wsparcie AI</h3>
-                <p>Automatyczne generowanie podsumowań recenzji gier dzięki sztucznej inteligencji.</p>
+            <h3 class="mb-4 text-warning border-bottom pb-2"><i class="bi bi-calendar-event"></i> Premiery w tym roku</h3>
+
+            <div class="list-group shadow">
+                @if (ViewBag.UpcomingReleases != null)
+                {
+                    foreach (var release in ViewBag.UpcomingReleases)
+                    {
+                        <div class="list-group-item bg-dark text-white border-secondary mb-3 rounded shadow-sm p-3">
+                            <div class="d-flex w-100 justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0 text-warning fw-bold fs-5">@release.Title</h6>
+                                <span class="badge bg-secondary text-light">@release.ReleaseDate</span>
+                            </div>
+                            <p class="mb-0 small text-muted">Platformy: <span class="text-info">@release.Platforms</span></p>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-secondary">Brak informacji o najbliższych premierach.</div>
+                }
             </div>
         </div>
     </div>

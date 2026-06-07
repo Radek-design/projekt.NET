@@ -1,20 +1,25 @@
-﻿namespace projekt.NET.Models.Entities
+﻿using System.ComponentModel.DataAnnotations;
+using projekt.NET.Models.Entities;
+namespace projekt.NET.Models
 {
     public class Review
     {
+        [Key]
         public int Id { get; set; }
 
-        
-        public string Content { get; set; } = string.Empty; //treść recenzji
-        public int Rating { get; set; } //ocena od 1 do 10  
+        [Required]
+        public string Content { get; set; } = string.Empty;
 
-        public DateTime CreateAt { get; set; } = DateTime.Now; //data dodania recezji
+        [Range(1, 10)]
+        public int Rating { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        // Relacja z grą (zakładając, że masz model Game lub UserGame)
         public int GameId { get; set; }
-
         public Game? Game { get; set; }
 
-
-        public string UserID { get; set; } = string.Empty; //id użytkownika który dodał recenzję
-         public ApplicationUser? User { get; set; }
+        // Relacja z użytkownikiem
+        public string UserId { get; set; } = string.Empty;
+        public ApplicationUser? User { get; set; }
     }
 }

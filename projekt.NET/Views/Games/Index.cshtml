@@ -1,0 +1,81 @@
+﻿@model IEnumerable<projekt.NET.Models.Entities.Game>
+
+@{
+    ViewData["Title"] = "Przeglądaj wszystkie gry";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Wszystkie gry z bazy</h2>
+
+        <form method="get" asp-controller="Games" asp-action="Index" class="d-flex align-items-center">
+            <label class="me-2 fw-bold">Gatunek:</label>
+            <select name="genreId" class="form-select me-2" onchange="this.form.submit()" style="min-width: 200px;">
+                <option value="">-- Wszystkie gatunki --</option>
+                @if (ViewBag.Genres != null)
+                {
+                    foreach (var genre in ViewBag.Genres)
+                    {
+                        // Zaznacz wybraną opcję
+                        if (ViewBag.SelectedGenre == genre.Id)
+                        {
+                            <option value="@genre.Id" selected="selected">@genre.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@genre.Id">@genre.Name</option>
+                        }
+                    }
+                }
+            </select>
+            <noscript>
+                <button type="submit" class="btn btn-primary">Filtruj</button>
+            </noscript>
+        </form>
+    </div>
+
+    <div class="row">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var game in Model)
+            {
+                <div class="col-md-3 mb-4">
+                    <div class="card h-100 shadow-sm bg-dark text-white border-secondary">
+                        <img src="@(string.IsNullOrEmpty(game.CoverImagePath) ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png" : game.CoverImagePath)"
+                             class="card-img-top" alt="@game.Title" style="height: 350px; object-fit: cover;">
+
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-info">@game.Title</h5>
+                            <p class="card-text mb-1"><strong>Wydano:</strong> @game.ReleaseDate.ToString("yyyy")</p>
+
+                            <p class="card-text mb-2 text-muted">
+                                @if (game.Genres != null && game.Genres.Any())
+                                {
+                                    @string.Join(", ", game.Genres.Select(g => g.Name))
+                                }
+                                else
+                                {
+                                    <span>Brak informacji o gatunku</span>
+                                }
+                            </p>
+
+                            <form asp-controller="Library" asp-action="AddGame" method="post" class="mt-auto">
+                                <input type="hidden" name="gameId" value="@game.Id" />
+                                <input type="hidden" name="status" value="W planach" />
+                                <button type="submit" class="btn btn-outline-success w-100">
+                                    <i class="bi bi-plus-lg"></i> Dodaj do biblioteki
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="alert alert-warning">Brak gier spełniających kryteria.</div>
+            </div>
+        }
+    </div>
+</div>

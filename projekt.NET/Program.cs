@@ -12,20 +12,20 @@ builder.Services.AddHttpClient<RawgService>();
 
 
 // === REPOZYTORIA ===
-// Scoped = nowa instancja na ka¿de ¿¹danie HTTP
+// Scoped = nowa instancja na kaï¿½de ï¿½ï¿½danie HTTP
 builder.Services.AddScoped<IGameRepository, GameRepository>();
 builder.Services.AddScoped<IProducerRepository, ProducerRepository>();
 builder.Services.AddScoped<IPlatformRepository, PlatformRepository>();
 builder.Services.AddScoped<IGenreRepository, GenreRepository>();
 
 //BAZA DANYCH
-// £¹czymy aplikacjê z SQL Server przez connection string z appsettings.json
+// ï¿½ï¿½czymy aplikacjï¿½ z SQL Server przez connection string z appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 //IDENTITY (logowanie i role)
-// Konfigurujemy system logowania - u¿ytkownik to ApplicationUser, role to IdentityRole
+// Konfigurujemy system logowania - uï¿½ytkownik to ApplicationUser, role to IdentityRole
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.Password.RequireDigit = true;
@@ -37,7 +37,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 //PRZEKIEROWANIA
-// Gdzie kierowaæ u¿ytkownika przy logowaniu, wylogowaniu i braku uprawnieñ
+// Gdzie kierowaï¿½ uï¿½ytkownika przy logowaniu, wylogowaniu i braku uprawnieï¿½
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
@@ -46,10 +46,12 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 //AUTOMAPPER
-// Biblioteka do mapowania obiektów np. encji na DTO i odwrotnie
+// Biblioteka do mapowania obiektï¿½w np. encji na DTO i odwrotnie
 builder.Services.AddAutoMapper(typeof(Program));
 
 builder.Services.AddControllersWithViews();
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var app = builder.Build();
 
@@ -73,7 +75,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 
-// Tworzymy domyœlne role jeœli nie istniej¹
+// Tworzymy domyï¿½lne role jeï¿½li nie istniejï¿½
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();

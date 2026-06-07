@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using projekt.NET.Data;
 
@@ -11,9 +12,11 @@ using projekt.NET.Data;
 namespace projekt.NET.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260607192249_AddForumAndScreenshots")]
+    partial class AddForumAndScreenshots
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -333,24 +336,6 @@ namespace projekt.NET.Migrations
                     b.ToTable("Platforms");
                 });
 
-            modelBuilder.Entity("projekt.NET.Models.Entities.Premiere", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("GameId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GameId");
-
-                    b.ToTable("Premieres");
-                });
-
             modelBuilder.Entity("projekt.NET.Models.Entities.Producer", b =>
                 {
                     b.Property<int>("Id")
@@ -412,7 +397,7 @@ namespace projekt.NET.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ForumPosts");
+                    b.ToTable("ForumPost");
                 });
 
             modelBuilder.Entity("projekt.NET.Models.Review", b =>
@@ -477,7 +462,7 @@ namespace projekt.NET.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Screenshots");
+                    b.ToTable("Screenshot");
                 });
 
             modelBuilder.Entity("projekt.NET.Models.UserGame", b =>
@@ -605,17 +590,6 @@ namespace projekt.NET.Migrations
                         .IsRequired();
 
                     b.Navigation("Producer");
-                });
-
-            modelBuilder.Entity("projekt.NET.Models.Entities.Premiere", b =>
-                {
-                    b.HasOne("projekt.NET.Models.Entities.Game", "Game")
-                        .WithMany()
-                        .HasForeignKey("GameId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Game");
                 });
 
             modelBuilder.Entity("projekt.NET.Models.ForumPost", b =>

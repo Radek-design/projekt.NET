@@ -20,6 +20,9 @@ namespace projekt.NET.Data
         public DbSet<Genre> Genres { get; set; } = null!;
         public DbSet<Review> Reviews { get; set; } = null!;
         public DbSet<UserGame> UserGames { get; set; } = null!; // Dodana brakująca tabela!
+        public DbSet<ForumPost> ForumPosts { get; set; } = null!;
+        public DbSet<Screenshot> Screenshots { get; set; } = null!;
+        public DbSet<Premiere> Premieres { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -56,6 +59,31 @@ namespace projekt.NET.Data
             modelBuilder.Entity<UserGame>()
                 .HasIndex(ug => new { ug.UserId, ug.GameId })
                 .IsUnique();
+            // Relacja ForumPost -> User
+            modelBuilder.Entity<ForumPost>()
+                .HasOne(fp => fp.User)
+                .WithMany(u => u.ForumPosts)
+                .HasForeignKey(fp => fp.UserId);
+
+            // Relacja Screenshot -> User
+            modelBuilder.Entity<Screenshot>()
+                .HasOne(s => s.User)
+                .WithMany(u => u.Screenshots)
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.NoAction); // Zapobiega błędom cyklicznego kaskadowego usuwania
+
+            // Relacja Screenshot -> Game
+            modelBuilder.Entity<Screenshot>()
+                .HasOne(s => s.Game)
+                .WithMany(g => g.Screenshots)
+                .HasForeignKey(s => s.GameId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Premiere>()
+                .HasOne(p => p.Game)
+                .WithMany()
+                .HasForeignKey(p => p.GameId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

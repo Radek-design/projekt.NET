@@ -5,31 +5,27 @@ using projekt.NET.Models.Entities;
 using System.Linq;
 using System.Security.Claims;
 using projekt.NET.Data;
+
 namespace projekt.NET.Controllers
 {
     public class LibraryController : Controller
     {
         private readonly AppDbContext _context;
 
-        // Wstrzykujemy bazę danych przez konstruktor
         public LibraryController(AppDbContext context)
         {
             _context = context;
         }
 
-        // Widok główny biblioteki - wyświetla gry zalogowanego użytkownika
         public IActionResult Index()
         {
-            // Pobieramy ID aktualnie zalogowanego użytkownika (z Identity)
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (userId == null)
             {
-                // Jeśli użytkownik nie jest zalogowany, możemy pokazać pustą listę lub przekierować do logowania
                 return View(new List<UserGame>());
             }
 
-            // Pobieramy z bazy gry użytkownika, dołączając dane o samej grze (Include), aby mieć dostęp do Tytułu i Okładki
             var myGames = _context.UserGames
                 .Include(ug => ug.Game)
                 .Where(ug => ug.UserId == userId)
@@ -38,18 +34,16 @@ namespace projekt.NET.Controllers
             return View(myGames);
         }
 
-        // Akcja dodawania gry do biblioteki użytkownika
         [HttpPost]
-        public IActionResult AddGame(int gameId, string status, int? rating, int playTimeHours)
+        public IActionResult AddGame(int gameId, string status, int? rating, int? playTimeHours) // Dodano '?' przy int, aby uodpornić na pusty input
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (userId == null)
             {
-                return Challenge(); // Wymaga zalogowania
+                return Challenge();
             }
 
-            // Sprawdzamy, czy użytkownik nie ma już tej gry w swojej bibliotece
             var alreadyExists = _context.UserGames.Any(ug => ug.UserId == userId && ug.GameId == gameId);
             if (alreadyExists)
             {
@@ -57,17 +51,22 @@ namespace projekt.NET.Controllers
                 return RedirectToAction("Index");
             }
 
-            // Tworzymy nowy obiekt powiązania
+            // Jeśli status to "Planuje", zerujemy oceny i czas
+            if (status == "Planuje")
+            {
+                rating = null;
+                playTimeHours = 0;
+            }
+
             var userGame = new UserGame
             {
                 UserId = userId,
                 GameId = gameId,
-                Status = status ?? "W trakcie",
+                Status = status ?? "Planuje",
                 Rating = rating,
-                PlayTimeHours = playTimeHours
+                PlayTimeHours = playTimeHours ?? 0
             };
 
-            // Baza danych automatycznie wygeneruje nowe ID dla wpisu
             _context.UserGames.Add(userGame);
             _context.SaveChanges();
 

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using projekt.NET.Models;
 using projekt.NET.Models.Entities;
 
 
@@ -30,9 +31,9 @@ namespace projekt.NET.Controllers
 
         //POST: /Account/Login - obsługuje dane z formularza logowania
         [HttpPost]
-        public async Task<IActionResult> Login(string email, string password)
+        public async Task<IActionResult> Login(string username, string password)
         {
-            var user = await _userManager.FindByEmailAsync(email);
+            var user = await _userManager.FindByNameAsync(username);
             if (user == null)
             {
                 // ZMIANA: Używamy ModelState zamiast ViewBag
@@ -68,7 +69,7 @@ namespace projekt.NET.Controllers
         {
             var user = new ApplicationUser
             {
-                UserName = email,
+                UserName = displayname,
                 Email = email,
                 DisplayName = displayname,
                 CreatedAt = DateTime.UtcNow

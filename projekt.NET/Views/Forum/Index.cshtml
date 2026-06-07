@@ -1,51 +1,64 @@
-﻿@{
+﻿@model IEnumerable<projekt.NET.Models.ForumPost>
+
+@{
     ViewData["Title"] = "Forum Graczy";
 }
 
 <div class="container mt-4">
     <div class="p-4 mb-4 bg-dark text-white rounded border border-secondary shadow-sm">
         <h2 class="text-info mb-1">💬 Forum Społeczności Graczy</h2>
-        <p class="text-muted mb-0">Miejsce wymiany opinii i dyskusji (Wersja demonstracyjna).</p>
+        <p class="text-muted mb-0">Miejsce wymiany opinii i dyskusji.</p>
     </div>
 
     <div class="row">
         <div class="col-md-8">
-            <div class="card bg-dark text-white border-secondary mb-4 shadow-sm">
-                <div class="card-header border-secondary d-flex justify-content-between align-items-center bg-transparent">
-                    <span class="fw-bold text-warning fs-5">Wątek: Lorem ipsum dolor sit amet</span>
-                    <span class="badge bg-primary">Dyskusja ogólna</span>
-                </div>
-                <div class="card-body">
-                    <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-                </div>
-                <div class="card-footer border-secondary text-muted small bg-transparent d-flex justify-content-between">
-                    <span>Autor: Graczu99</span>
-                    <span>Ostatni post: przed chwilą</span>
-                </div>
-            </div>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var post in Model)
+                {
+                    <div class="card bg-dark text-white border-secondary mb-4 shadow-sm">
+                        <div class="card-header border-secondary d-flex justify-content-between align-items-center bg-transparent">
+                            <span class="fw-bold text-warning fs-5">Wątek: @post.Title</span>
+                            <span class="badge bg-primary">@post.Topic</span>
+                        </div>
+                        <div class="card-body">
+                            @if (post.IsDeletedByModerator)
+                            {
+                                <p class="card-text text-danger"><i>Wątek został usunięty przez moderatora.</i></p>
+                            }
+                            else if (post.IsApproved || User.IsInRole("Moderator"))
+                            {
+                                <p class="card-text">@post.Content</p>
 
-            <div class="card bg-dark text-white border-secondary mb-4 shadow-sm">
-                <div class="card-header border-secondary d-flex justify-content-between align-items-center bg-transparent">
-                    <span class="fw-bold text-warning fs-5">Wątek: Duis aute irure dolor in reprehenderit</span>
-                    <span class="badge bg-success">Problemy techniczne</span>
-                </div>
-                <div class="card-body">
-                    <p class="card-text">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-                </div>
-                <div class="card-footer border-secondary text-muted small bg-transparent d-flex justify-content-between">
-                    <span>Autor: Tester3000</span>
-                    <span>Ostatni post: 3 godziny temu</span>
-                </div>
-            </div>
+                                @if (!post.IsApproved && User.IsInRole("Moderator"))
+                                {
+                                    <span class="badge bg-danger">Wymaga akceptacji</span>
+                                }
+                            }
+                            else
+                            {
+                                <p class="card-text text-muted"><i>Wpis oczekuje na zatwierdzenie przez moderatora...</i></p>
+                            }
+                        </div>
+                        <div class="card-footer border-secondary text-muted small bg-transparent d-flex justify-content-between">
+                            <span>Autor: @post.User?.UserName</span>
+                            <span>Dodano: @post.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-secondary text-center">Brak wpisów na forum. Bądź pierwszy!</div>
+            }
         </div>
 
         <div class="col-md-4">
             <div class="card bg-dark text-white border-secondary shadow-sm">
                 <div class="card-body">
                     <h5 class="text-info border-bottom pb-2 mb-3"><i class="bi bi-bar-chart"></i> Statystyki Forum</h5>
-                    <p class="mb-2">Zarejestrowani użytkownicy: <strong class="text-warning">1,482</strong></p>
-                    <p class="mb-2">Napisane posty: <strong class="text-warning">12,504</strong></p>
-                    <p class="mb-0">Użytkownicy online: <strong class="text-success">54</strong></p>
+                    <p class="mb-2">Zarejestrowani użytkownicy: <strong class="text-warning">@ViewBag.UserCount</strong></p>
+                    <p class="mb-2">Napisane posty: <strong class="text-warning">@ViewBag.PostCount</strong></p>
                 </div>
             </div>
         </div>

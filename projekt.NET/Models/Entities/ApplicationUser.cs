@@ -23,5 +23,8 @@ namespace projekt.NET.Models.Entities
 
         // Relacja: Użytkownik może mieć wiele recenzji
         public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
+        public virtual ICollection<ForumPost> ForumPosts { get; set; } = new List<ForumPost>();
+        public virtual ICollection<Screenshot> Screenshots { get; set; } = new List<Screenshot>();
     }
+
 }

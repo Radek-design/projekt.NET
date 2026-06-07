@@ -25,5 +25,6 @@ namespace projekt.NET.Models
         // Relacja z użytkownikiem (kto napisał post)
         public string UserId { get; set; } = string.Empty;
         public ApplicationUser? User { get; set; }
+        public ICollection<ForumComment> Comments { get; set; } = new List<ForumComment>();
     }
 }

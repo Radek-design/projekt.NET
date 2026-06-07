@@ -1,66 +1,162 @@
 ﻿@model IEnumerable<projekt.NET.Models.ForumPost>
-
 @{
     ViewData["Title"] = "Forum Graczy";
 }
 
 <div class="container mt-4">
     <div class="p-4 mb-4 bg-dark text-white rounded border border-secondary shadow-sm">
-        <h2 class="text-info mb-1">💬 Forum Społeczności Graczy</h2>
-        <p class="text-muted mb-0">Miejsce wymiany opinii i dyskusji.</p>
+        <h2 class="text-info mb-1"><i class="bi bi-chat-square-dots"></i> Społeczność i Dyskusje</h2>
+        <p class="text-muted mb-0">Zadawaj pytania, rozwiązuj problemy i dyskutuj o ulubionych grach.</p>
     </div>
 
+    <!-- Komunikat systemowy -->
+    @if (TempData["ForumMsg"] != null)
+    {
+        <div class="alert alert-success border-success shadow-sm">
+            <i class="bi bi-check-circle-fill"></i> @TempData["ForumMsg"]
+        </div>
+    }
+
     <div class="row">
+        <!-- LEWA STRONA: Filtrowanie i Lista Postów -->
         <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="text-light">Wątki na forum</h4>
+                <form method="get" asp-action="Index" class="d-flex">
+                    <select name="topicFilter" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="this.form.submit()">
+                        <option value="">-- Wszystkie Tematy --</option>
+                        <option value="Dyskusja ogólna" selected="@(ViewBag.CurrentFilter == "Dyskusja ogólna")">Dyskusja ogólna</option>
+                        <option value="Problemy techniczne" selected="@(ViewBag.CurrentFilter == "Problemy techniczne")">Problemy techniczne</option>
+                        @if (ViewBag.Games != null)
+                        {
+                            foreach (var g in ViewBag.Games)
+                            {
+                                <option value="@g.Title" selected="@(ViewBag.CurrentFilter == g.Title)">Gra: @g.Title</option>
+                            }
+                        }
+                    </select>
+                    <noscript><button class="btn btn-sm btn-primary ms-1">Filtruj</button></noscript>
+                </form>
+            </div>
+
             @if (Model != null && Model.Any())
             {
                 foreach (var post in Model)
                 {
                     <div class="card bg-dark text-white border-secondary mb-4 shadow-sm">
                         <div class="card-header border-secondary d-flex justify-content-between align-items-center bg-transparent">
-                            <span class="fw-bold text-warning fs-5">Wątek: @post.Title</span>
-                            <span class="badge bg-primary">@post.Topic</span>
+                            <span class="fw-bold text-warning fs-5">@post.Title</span>
+                            <span class="badge bg-primary">Temat: @post.Topic</span>
                         </div>
                         <div class="card-body">
+
+                            <!-- LOGIKA USUNIĘTEGO POSTA -->
                             @if (post.IsDeletedByModerator)
                             {
-                                <p class="card-text text-danger"><i>Wątek został usunięty przez moderatora.</i></p>
-                            }
-                            else if (post.IsApproved || User.IsInRole("Moderator"))
-                            {
-                                <p class="card-text">@post.Content</p>
-
-                                @if (!post.IsApproved && User.IsInRole("Moderator"))
-                                {
-                                    <span class="badge bg-danger">Wymaga akceptacji</span>
-                                }
+                                <div class="alert alert-danger p-2 mb-0 border-danger">
+                                    <i><i class="bi bi-exclamation-triangle-fill"></i> Wątek został usunięty przez moderatora.</i>
+                                </div>
                             }
                             else
                             {
-                                <p class="card-text text-muted"><i>Wpis oczekuje na zatwierdzenie przez moderatora...</i></p>
+                                <!-- Informacja dla autora o braku akceptacji -->
+                                @if (!post.IsApproved)
+                                {
+                                    <span class="badge bg-danger mb-2">Wpis widoczny tylko dla Ciebie (Oczekuje na akceptację moda)</span>
+                                }
+
+                                <p class="card-text text-light" style="white-space: pre-wrap;">@post.Content</p>
+
+                                <!-- OPCJE MODERATORA -->
+                                @if (User.IsInRole("Moderator"))
+                                {
+                                    <div class="mt-3 pt-2 border-top border-secondary d-flex gap-2">
+                                        @if (!post.IsApproved)
+                                        {
+                                            <form asp-action="ApprovePost" method="post" class="m-0">
+                                                <input type="hidden" name="id" value="@post.Id" />
+                                                <button class="btn btn-sm btn-success fw-bold"><i class="bi bi-check-lg"></i> Zatwierdź wpis</button>
+                                            </form>
+                                        }
+                                        <form asp-action="DeletePost" method="post" class="m-0" onsubmit="return confirm('Oflagować ten wpis jako usunięty?');">
+                                            <input type="hidden" name="id" value="@post.Id" />
+                                            <button class="btn btn-sm btn-danger fw-bold"><i class="bi bi-trash"></i> Usuń wpis</button>
+                                        </form>
+                                    </div>
+                                }
                             }
                         </div>
                         <div class="card-footer border-secondary text-muted small bg-transparent d-flex justify-content-between">
-                            <span>Autor: @post.User?.UserName</span>
-                            <span>Dodano: @post.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                            <span>Autor: <strong class="text-info">@post.User?.UserName</strong></span>
+                            <span>@post.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
                         </div>
                     </div>
                 }
             }
             else
             {
-                <div class="alert alert-secondary text-center">Brak wpisów na forum. Bądź pierwszy!</div>
+                <div class="alert alert-secondary">Brak wpisów dla wybranego filtru. Zacznij dyskusję!</div>
             }
         </div>
 
+        <!-- PRAWA KOLUMNA: Nowy Post i Statystyki -->
         <div class="col-md-4">
+
+            <!-- PANEL DODAWANIA POSTA -->
+            @if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                <div class="card bg-dark text-white border-success mb-4 shadow-sm">
+                    <div class="card-header bg-success text-dark fw-bold">
+                        <i class="bi bi-pencil-square"></i> Zacznij nową dyskusję
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="CreatePost" method="post">
+                            <label class="small text-success fw-bold">Wybierz Temat:</label>
+                            <select name="topic" required class="form-select form-select-sm bg-dark text-white border-secondary mb-3">
+                                <option value="Dyskusja ogólna">Dyskusja ogólna</option>
+                                <option value="Problemy techniczne">Problemy techniczne</option>
+                                @if (ViewBag.Games != null)
+                                {
+                                    <optgroup label="Gry z bazy">
+                                        @foreach (var g in ViewBag.Games)
+                                        {
+                                            <option value="@g.Title">@g.Title</option>
+                                        }
+                                    </optgroup>
+                                }
+                            </select>
+
+                            <label class="small text-success fw-bold">Tytuł wątku:</label>
+                            <input type="text" name="title" required class="form-control form-control-sm bg-dark text-white border-secondary mb-3" placeholder="O czym chcesz napisać?" />
+
+                            <label class="small text-success fw-bold">Treść:</label>
+                            <textarea name="content" required rows="4" class="form-control form-control-sm bg-dark text-white border-secondary mb-3" placeholder="Rozwiń swoją myśl..."></textarea>
+
+                            <button type="submit" class="btn btn-success btn-sm w-100 text-dark fw-bold">Wyślij do zatwierdzenia</button>
+                        </form>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning shadow-sm">Zaloguj się, aby móc dodawać wpisy na forum.</div>
+            }
+
+            <!-- STATYSTYKI -->
             <div class="card bg-dark text-white border-secondary shadow-sm">
                 <div class="card-body">
-                    <h5 class="text-info border-bottom pb-2 mb-3"><i class="bi bi-bar-chart"></i> Statystyki Forum</h5>
-                    <p class="mb-2">Zarejestrowani użytkownicy: <strong class="text-warning">@ViewBag.UserCount</strong></p>
-                    <p class="mb-2">Napisane posty: <strong class="text-warning">@ViewBag.PostCount</strong></p>
+                    <h5 class="text-info border-bottom border-secondary pb-2 mb-3"><i class="bi bi-bar-chart-fill"></i> Statystyki Forum</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Zarejestrowani:</span>
+                        <strong class="text-warning">@ViewBag.UserCount <i class="bi bi-people-fill"></i></strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Napisane posty:</span>
+                        <strong class="text-warning">@ViewBag.PostCount <i class="bi bi-file-text-fill"></i></strong>
+                    </div>
                 </div>
             </div>
+
         </div>
     </div>
 </div>

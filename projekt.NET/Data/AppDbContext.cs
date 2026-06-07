@@ -23,6 +23,7 @@ namespace projekt.NET.Data
         public DbSet<ForumPost> ForumPosts { get; set; } = null!;
         public DbSet<Screenshot> Screenshots { get; set; } = null!;
         public DbSet<Premiere> Premieres { get; set; } = null!;
+        public DbSet<ForumComment> ForumComments { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -79,11 +80,11 @@ namespace projekt.NET.Data
                 .HasForeignKey(s => s.GameId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Premiere>()
-                .HasOne(p => p.Game)
-                .WithMany()
-                .HasForeignKey(p => p.GameId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<ForumComment>()
+            .HasOne(fc => fc.ForumPost)
+            .WithMany(fp => fp.Comments) // Musisz dodać kolekcję w ForumPost.cs
+            .HasForeignKey(fc => fc.ForumPostId)
+            .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

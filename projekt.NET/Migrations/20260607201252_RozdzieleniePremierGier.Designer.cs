@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using projekt.NET.Data;
 
@@ -11,9 +12,11 @@ using projekt.NET.Data;
 namespace projekt.NET.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260607201252_RozdzieleniePremierGier")]
+    partial class RozdzieleniePremierGier
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -242,9 +245,6 @@ namespace projekt.NET.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<string>("ProfilePictureUrl")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -386,37 +386,6 @@ namespace projekt.NET.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Producers");
-                });
-
-            modelBuilder.Entity("projekt.NET.Models.ForumComment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ForumPostId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ForumPostId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ForumComments");
                 });
 
             modelBuilder.Entity("projekt.NET.Models.ForumPost", b =>
@@ -651,25 +620,6 @@ namespace projekt.NET.Migrations
                     b.Navigation("Producer");
                 });
 
-            modelBuilder.Entity("projekt.NET.Models.ForumComment", b =>
-                {
-                    b.HasOne("projekt.NET.Models.ForumPost", "ForumPost")
-                        .WithMany("Comments")
-                        .HasForeignKey("ForumPostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ForumPost");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("projekt.NET.Models.ForumPost", b =>
                 {
                     b.HasOne("projekt.NET.Models.Entities.ApplicationUser", "User")
@@ -761,11 +711,6 @@ namespace projekt.NET.Migrations
             modelBuilder.Entity("projekt.NET.Models.Entities.Producer", b =>
                 {
                     b.Navigation("Games");
-                });
-
-            modelBuilder.Entity("projekt.NET.Models.ForumPost", b =>
-                {
-                    b.Navigation("Comments");
                 });
 #pragma warning restore 612, 618
         }

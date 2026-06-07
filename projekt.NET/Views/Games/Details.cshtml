@@ -1,0 +1,121 @@
+﻿@model projekt.NET.Models.Entities.Game
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card bg-dark border-secondary shadow-sm">
+                <img src="@(string.IsNullOrEmpty(Model.CoverImagePath) ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png" : Model.CoverImagePath)"
+                     class="card-img-top img-fluid" alt="@Model.Title" style="border-bottom: 2px solid #6c757d;">
+
+                <div class="card-body text-white">
+                    <h3 class="text-info fw-bold">@Model.Title</h3>
+                    <h4 class="text-warning mb-3">
+                        <i class="bi bi-star-fill"></i> Średnia ocen: @(Model.AverageRating > 0 ? Model.AverageRating.ToString("0.0") : "Brak") / 10
+                    </h4>
+
+                    <ul class="list-group list-group-flush border-secondary">
+                        <li class="list-group-item bg-transparent text-light border-secondary px-0">
+                            <strong>Wydawca:</strong> @(Model.Producer?.Name ?? "Nieznany")
+                        </li>
+                        <li class="list-group-item bg-transparent text-light border-secondary px-0">
+                            <strong>Data premiery:</strong> @Model.ReleaseDate.ToString("dd.MM.yyyy")
+                        </li>
+                        <li class="list-group-item bg-transparent text-light border-secondary px-0">
+                            <strong>Gatunki:</strong>
+                            @(Model.Genres.Any() ? string.Join(", ", Model.Genres.Select(g => g.Name)) : "Brak danych")
+                        </li>
+                        <li class="list-group-item bg-transparent text-light border-secondary px-0">
+                            <strong>Platformy:</strong>
+                            @(Model.Platforms.Any() ? string.Join(", ", Model.Platforms.Select(p => p.Name)) : "Brak danych")
+                        </li>
+                    </ul>
+                    @if (User.IsInRole("Moderator"))
+                    {
+                        <div class="mt-4 pt-3 border-top border-secondary">
+                            <form asp-controller="Games" asp-action="DeleteGame" method="post" onsubmit="return confirm('Czy na pewno chcesz całkowicie usunąć tę grę z bazy danych? Akcja jest nieodwracalna!');">
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm w-100 fw-bold">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> Usuń całkowicie tę grę
+                                </button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="mb-5 text-light">
+                <h4 class="text-info border-bottom border-secondary pb-2">O grze</h4>
+                <p style="text-align: justify; line-height: 1.6;">
+                    @(string.IsNullOrEmpty(Model.Description) ? "Brak szczegółowego opisu dla tej gry w bazie." : Model.Description)
+                </p>
+            </div>
+
+            <h4 class="text-info border-bottom border-secondary pb-2 mb-4"><i class="bi bi-chat-left-text"></i> Recenzje Użytkowników</h4>
+
+            @if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                <div class="card bg-dark text-white border-secondary mb-4 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-warning mb-3">Napisz swoją recenzję:</h6>
+                        <form asp-controller="Games" asp-action="AddReview" method="post">
+                            <input type="hidden" name="gameId" value="@Model.Id" />
+                            <div class="mb-2">
+                                <label class="form-label small">Twoja Ocena (1-10):</label>
+                                <input type="number" name="rating" min="1" max="10" required class="form-control form-control-sm bg-dark text-white border-secondary" style="width: 100px;" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small">Treść recenzji:</label>
+                                <textarea name="content" required class="form-control form-control-sm bg-dark text-white border-secondary" rows="3" placeholder="Co sądzisz o tej grze?"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-info btn-sm text-dark fw-bold">Dodaj Recenzję</button>
+                        </form>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-secondary">Musisz być zalogowany, aby dodać recenzję.</div>
+            }
+
+            @if (Model.Reviews != null && Model.Reviews.Any())
+            {
+                foreach (var review in Model.Reviews.OrderByDescending(r => r.CreatedAt))
+                {
+                    <div class="card bg-dark text-white border-secondary mb-3 shadow-sm">
+                        <div class="card-header bg-transparent border-secondary d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="bi bi-person-circle text-info"></i> <strong>@(review.User?.UserName ?? "Nieznany Użytkownik")</strong>
+                            </span>
+                            <span class="badge bg-warning text-dark fs-6"><i class="bi bi-star-fill"></i> @review.Rating/10</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">@review.Content</p>
+                        </div>
+                        <div class="card-footer bg-transparent border-secondary text-muted small d-flex justify-content-between align-items-center">
+                            <span>Napisano: @review.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+
+                            @if (User.IsInRole("Moderator"))
+                            {
+                                <form asp-controller="Games" asp-action="DeleteReview" method="post" class="m-0">
+                                    <input type="hidden" name="reviewId" value="@review.Id" />
+                                    <input type="hidden" name="gameId" value="@Model.Id" />
+                                    <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i> Usuń (Mod)</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-muted">Nikt jeszcze nie zrecenzował tej gry. Bądź pierwszy!</p>
+            }
+        </div>
+    </div>
+</div>

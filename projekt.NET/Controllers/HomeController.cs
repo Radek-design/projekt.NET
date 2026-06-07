@@ -10,7 +10,6 @@ using System.Net.Http.Headers;
 
 namespace projekt.NET.Controllers
 {
-    // Klasa NewsItem zostaje w Twoim kontrolerze dokładnie tak jak miałeś
     public class NewsItem
     {
         public string Title { get; set; } = string.Empty;
@@ -24,7 +23,7 @@ namespace projekt.NET.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IConfiguration _configuration;
-        private readonly AppDbContext _context; // Baza danych
+        private readonly AppDbContext _context;
 
         private static List<NewsItem> _newsList = new List<NewsItem>();
 
@@ -37,71 +36,38 @@ namespace projekt.NET.Controllers
 
         public IActionResult Index()
         {
-            // POBIERAMY PREMIERY Z BAZY DANYCH (wymaga tabeli Premiere w AppDbContext)
-            // Używamy Include aby dołączyć dane o grze i jej platformach
-            var premieresFromDb = _context.Premieres
-                .Include(p => p.Game)
-                .ThenInclude(g => g.Platforms)
-                .Include(p => p.Game)
-                .ThenInclude(g => g.Genres)
-                .ToList();
+            // Pobieramy same premiery, bez dołączania gry (bo już nie ma powiązania)
+            ViewBag.Premieres = _context.Premieres.OrderBy(p => p.ReleaseDate).ToList();
 
-            // Przekazujemy premiery przez ViewBag, aby NIE MIESZAĆ ich z modelem NewsItem!
-            ViewBag.Premieres = premieresFromDb;
-
-            // Przekazujemy platformy i gatunki do formularza dodawania
             ViewBag.Platforms = _context.Platforms.OrderBy(p => p.Name).ToList();
             ViewBag.Genres = _context.Genres.OrderBy(g => g.Name).ToList();
 
-            // Głównym modelem pozostaje lista Newsów
             return View(_newsList);
         }
 
         [HttpPost]
         public IActionResult AddPremiere(string title, DateTime releaseDate, int[] selectedPlatforms, int[] selectedGenres)
         {
-            // Zabezpieczenie: Tylko moderator może dodać grę
             if (!User.IsInRole("Moderator")) return Challenge();
 
-            var producer = _context.Producers.FirstOrDefault();
-            if (producer == null)
-            {
-                producer = new Producer { Name = "Nieznany Wydawca" };
-                _context.Producers.Add(producer);
-                _context.SaveChanges();
-            }
+            // Pobieramy nazwy wybranych platform i gatunków z bazy
+            var platformsList = selectedPlatforms != null
+                ? _context.Platforms.Where(p => selectedPlatforms.Contains(p.Id)).Select(p => p.Name).ToList()
+                : new List<string>();
 
-            var newGame = new Game
+            var genresList = selectedGenres != null
+                ? _context.Genres.Where(g => selectedGenres.Contains(g.Id)).Select(g => g.Name).ToList()
+                : new List<string>();
+
+            // Tworzymy NIEZALEŻNĄ premierę (nie tworzy to już nowej Gry!)
+            var newPremiere = new Premiere
             {
                 Title = title,
                 ReleaseDate = releaseDate,
-                ProducerId = producer.Id,
-                AverageRating = 0
+                Platforms = platformsList.Any() ? string.Join(", ", platformsList) : "Brak",
+                Genres = genresList.Any() ? string.Join(", ", genresList) : "Brak"
             };
 
-            if (selectedPlatforms != null)
-            {
-                foreach (var pId in selectedPlatforms)
-                {
-                    var platform = _context.Platforms.Find(pId);
-                    if (platform != null) newGame.Platforms.Add(platform);
-                }
-            }
-
-            if (selectedGenres != null)
-            {
-                foreach (var gId in selectedGenres)
-                {
-                    var genre = _context.Genres.Find(gId);
-                    if (genre != null) newGame.Genres.Add(genre);
-                }
-            }
-
-            _context.Games.Add(newGame);
-            _context.SaveChanges();
-
-            // Przypisujemy grę bezpośrednio jako premierę
-            var newPremiere = new Premiere { GameId = newGame.Id };
             _context.Premieres.Add(newPremiere);
             _context.SaveChanges();
 

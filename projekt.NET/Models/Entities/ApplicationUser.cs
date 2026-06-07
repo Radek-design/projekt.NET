@@ -13,6 +13,7 @@ namespace projekt.NET.Models.Entities
 
         // Data rejestracji konta
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public string? ProfilePictureUrl { get; set; }
 
         // Właściwości przeniesione z usuniętego pliku
         public string? FirstName { get; set; }

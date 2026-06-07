@@ -28,7 +28,6 @@
                                 <label class="form-label small text-info fw-bold">Data Premiery</label>
                                 <input type="date" name="releaseDate" class="form-control form-control-sm bg-dark text-white border-secondary" required />
                             </div>
-
                             <div class="mb-2">
                                 <label class="form-label small text-info fw-bold">Platformy (Przytrzymaj CTRL aby zaznaczyć kilka)</label>
                                 <select name="selectedPlatforms" class="form-select form-select-sm bg-dark text-white border-secondary" multiple style="height: 90px;">
@@ -41,7 +40,6 @@
                                     }
                                 </select>
                             </div>
-
                             <div class="mb-3">
                                 <label class="form-label small text-info fw-bold">Gatunki (Przytrzymaj CTRL aby zaznaczyć kilka)</label>
                                 <select name="selectedGenres" class="form-select form-select-sm bg-dark text-white border-secondary" multiple style="height: 90px;">
@@ -98,35 +96,11 @@
                     {
                         <div class="list-group-item bg-dark text-white border-secondary mb-3 rounded shadow-sm p-3">
                             <div class="d-flex w-100 justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0 text-warning fw-bold fs-5">@premiere.Game?.Title</h6>
-                                <span class="badge bg-secondary text-light">@premiere.Game?.ReleaseDate.ToString("dd.MM.yyyy")</span>
+                                <h6 class="mb-0 text-warning fw-bold fs-5">@premiere.Title</h6>
+                                <span class="badge bg-secondary text-light">@premiere.ReleaseDate.ToString("dd.MM.yyyy")</span>
                             </div>
-                            <p class="mb-1 small text-muted">
-                                Platformy:
-                                <span class="text-info">
-                                    @if (premiere.Game?.Platforms != null && premiere.Game.Platforms.Any())
-                                    {
-                                        @string.Join(", ", premiere.Game.Platforms.Select(p => p.Name))
-                                    }
-                                    else
-                                    {
-                                        <span>Brak informacji</span>
-                                    }
-                                </span>
-                            </p>
-                            <p class="mb-0 small text-muted">
-                                Gatunek:
-                                <span class="text-success">
-                                    @if (premiere.Game?.Genres != null && premiere.Game.Genres.Any())
-                                    {
-                                        @string.Join(", ", premiere.Game.Genres.Select(g => g.Name))
-                                    }
-                                    else
-                                    {
-                                        <span>Brak informacji</span>
-                                    }
-                                </span>
-                            </p>
+                            <p class="mb-1 small text-muted">Platformy: <span class="text-info">@premiere.Platforms</span></p>
+                            <p class="mb-0 small text-muted">Gatunki: <span class="text-success">@premiere.Genres</span></p>
                         </div>
                     }
                 }

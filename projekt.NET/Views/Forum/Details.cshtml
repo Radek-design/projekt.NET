@@ -1,0 +1,21 @@
+﻿@model projekt.NET.Models.ForumPost
+
+<h2>@Model.Title</h2>
+<p>@Model.Content</p>
+
+<hr />
+<h3>Komentarze:</h3>
+@foreach (var comment in Model.Comments)
+{
+    <div class="card mb-2">
+        <div class="card-body">
+            <strong>@comment.User.UserName:</strong> @comment.Content
+        </div>
+    </div>
+}
+
+<form asp-action="AddComment" method="post">
+    <input type="hidden" name="postId" value="@Model.Id" />
+    <textarea name="content" required placeholder="Dodaj komentarz..."></textarea>
+    <button type="submit">Opublikuj</button>
+</form>

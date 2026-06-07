@@ -1,16 +1,97 @@
 ﻿@model IEnumerable<projekt.NET.Models.Entities.Game>
 
 @{
-    ViewData["Title"] = "Przeglądaj wszystkie gry";
+    ViewData["Title"] = "Wszystkie gry z bazy";
 }
 
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Wszystkie gry z bazy</h2>
+    <h2 class="mb-4 text-info"><i class="bi bi-joystick"></i> Katalog Gier</h2>
 
+    @if (TempData["ErrorMsg"] != null)
+    {
+        <div class="alert alert-danger shadow-sm border-danger">
+            <strong><i class="bi bi-x-circle-fill"></i> Błąd!</strong> @TempData["ErrorMsg"]
+        </div>
+    }
+    @if (TempData["SuccessMsg"] != null)
+    {
+        <div class="alert alert-success shadow-sm border-success">
+            <strong><i class="bi bi-check-circle-fill"></i> Sukces!</strong> @TempData["SuccessMsg"]
+        </div>
+    }
+
+    @if (User.IsInRole("Moderator"))
+    {
+        <div class="card bg-dark text-white border-warning mb-4 shadow-sm">
+            <div class="card-header bg-warning text-dark fw-bold">
+                <i class="bi bi-shield-lock"></i> Narzędzia Moderatora: Dodaj Nową Grę do Katalogu
+            </div>
+            <div class="card-body">
+                <form asp-controller="Games" asp-action="Create" method="post" class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small text-warning fw-bold">Tytuł Gry</label>
+                        <input type="text" name="title" class="form-control form-control-sm bg-dark text-white border-secondary" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-warning fw-bold">Data Premiery</label>
+                        <input type="date" name="releaseDate" class="form-control form-control-sm bg-dark text-white border-secondary" required />
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label small text-warning fw-bold">Krótki opis</label>
+                        <textarea name="description" class="form-control form-control-sm bg-dark text-white border-secondary" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-warning fw-bold">Link do okładki (URL)</label>
+                        <input type="url" name="coverImagePath" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="https://..." />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-warning fw-bold">Wydawca (Producent)</label>
+                        <select name="producerId" class="form-select form-select-sm bg-dark text-white border-secondary" required>
+                            @if (ViewBag.Producers != null)
+                            {
+                                foreach (var producer in ViewBag.Producers)
+                                {
+                                    <option value="@producer.Id">@producer.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-warning fw-bold">Platformy (Trzymaj CTRL)</label>
+                        <select name="selectedPlatforms" class="form-select form-select-sm bg-dark text-white border-secondary" multiple style="height: 80px;">
+                            @if (ViewBag.Platforms != null)
+                            {
+                                foreach (var platform in ViewBag.Platforms)
+                                {
+                                    <option value="@platform.Id">@platform.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-warning fw-bold">Gatunki (Trzymaj CTRL)</label>
+                        <select name="selectedGenres" class="form-select form-select-sm bg-dark text-white border-secondary" multiple style="height: 80px;">
+                            @if (ViewBag.Genres != null)
+                            {
+                                foreach (var genre in ViewBag.Genres)
+                                {
+                                    <option value="@genre.Id">@genre.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-warning btn-sm text-dark fw-bold px-4">Zapisz grę</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <form method="get" asp-controller="Games" asp-action="Index" class="d-flex align-items-center">
-            <label class="me-2 fw-bold">Gatunek:</label>
-            <select name="genreId" class="form-select me-2" onchange="this.form.submit()" style="min-width: 200px;">
+            <label class="me-2 fw-bold text-light">Gatunek:</label>
+            <select name="genreId" class="form-select form-select-sm bg-dark text-white border-secondary me-2" onchange="this.form.submit()" style="min-width: 200px;">
                 <option value="">-- Wszystkie gatunki --</option>
                 @if (ViewBag.Genres != null)
                 {
@@ -28,7 +109,7 @@
                 }
             </select>
             <noscript>
-                <button type="submit" class="btn btn-primary">Filtruj</button>
+                <button type="submit" class="btn btn-primary btn-sm">Filtruj</button>
             </noscript>
         </form>
     </div>
@@ -40,15 +121,22 @@
             {
                 <div class="col-md-3 mb-4">
                     <div class="card h-100 shadow-sm bg-dark text-white border-secondary">
-                        <img src="@(string.IsNullOrEmpty(game.CoverImagePath) ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png" : game.CoverImagePath)"
-                             class="card-img-top" alt="@game.Title" style="height: 350px; object-fit: cover;">
+
+                        <a asp-controller="Games" asp-action="Details" asp-route-id="@game.Id">
+                            <img src="@(string.IsNullOrEmpty(game.CoverImagePath) ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png" : game.CoverImagePath)"
+                                 class="card-img-top border-bottom border-secondary" alt="@game.Title" style="height: 320px; object-fit: cover;">
+                        </a>
 
                         <div class="card-body d-flex flex-column">
-                            <h5 class="card-title text-info">@game.Title</h5>
-                            <p class="card-text mb-1"><strong>Wydano:</strong> @game.ReleaseDate.ToString("yyyy")</p>
-                            <p class="card-text mb-1"><strong>Średnia ocena:</strong> @(game.AverageRating > 0 ? game.AverageRating.ToString("0.0") : "Brak ocen") / 10</p>
+                            <a asp-controller="Games" asp-action="Details" asp-route-id="@game.Id" class="text-decoration-none">
+                                <h5 class="card-title text-info fw-bold">@game.Title</h5>
+                            </a>
+                            <p class="card-text mb-1 small text-muted"><strong>Wydano:</strong> @game.ReleaseDate.ToString("yyyy")</p>
+                            <p class="card-text mb-1 small text-warning">
+                                <strong><i class="bi bi-star-fill"></i> Średnia ocen:</strong> @(game.AverageRating > 0 ? game.AverageRating.ToString("0.0") : "Brak") / 10
+                            </p>
 
-                            <p class="card-text mb-2 text-muted">
+                            <p class="card-text mb-3 small text-muted">
                                 @if (game.Genres != null && game.Genres.Any())
                                 {
                                     @string.Join(", ", game.Genres.Select(g => g.Name))
@@ -59,24 +147,32 @@
                                 }
                             </p>
 
-                            <form asp-controller="Library" asp-action="AddGame" method="post" class="mt-auto">
+                            <form asp-controller="Library" asp-action="AddGame" method="post" class="mt-auto library-form">
                                 <input type="hidden" name="gameId" value="@game.Id" />
 
-                                <select name="status" class="form-select form-select-sm mb-2 bg-dark text-white border-secondary" required onchange="toggleFields(this, @game.Id)">
-                                    <option value="Planuje">Planuje</option>
-                                    <option value="W trakcie">W trakcie</option>
+                                <select name="status" class="form-select form-select-sm mb-2 bg-dark text-white border-secondary" required onchange="toggleFields(this)">
+                                    <option value="Planuje">Planuje zagrać</option>
+                                    <option value="W trakcie">W trakcie gry</option>
                                     <option value="Ukończona">Ukończona</option>
                                 </select>
 
-                                <div id="extra-fields-@game.Id" style="display: none;">
+                                <div class="extra-fields" style="display: none;">
                                     <input type="number" name="playTimeHours" class="form-control form-control-sm mb-2 bg-dark text-white border-secondary" placeholder="Czas gry (godz.)" min="0" value="0" />
-                                    <input type="number" name="rating" class="form-control form-control-sm mb-2 bg-dark text-white border-secondary" placeholder="Ocena (1-10)" min="1" max="10" />
                                 </div>
 
-                                <button type="submit" class="btn btn-outline-success w-100">
+                                <button type="submit" class="btn btn-outline-success btn-sm w-100 fw-bold">
                                     <i class="bi bi-plus-lg"></i> Dodaj do biblioteki
                                 </button>
                             </form>
+                            @if (User.IsInRole("Moderator"))
+                            {
+                                <form asp-controller="Games" asp-action="DeleteGame" method="post" class="mt-2" onsubmit="return confirm('Czy na pewno chcesz usunąć grę @game.Title? Ta akcja usunie ją również ze wszystkich bibliotek graczy i wykasuje jej recenzje. To działanie jest nieodwracalne!');">
+                                    <input type="hidden" name="id" value="@game.Id" />
+                                    <button type="submit" class="btn btn-danger btn-sm w-100 fw-bold">
+                                        <i class="bi bi-trash"></i> Usuń grę (Mod)
+                                    </button>
+                                </form>
+                            }
                         </div>
                     </div>
                 </div>
@@ -85,7 +181,7 @@
         else
         {
             <div class="col-12">
-                <div class="alert alert-warning">Brak gier spełniających kryteria.</div>
+                <div class="alert alert-secondary">Brak gier spełniających kryteria.</div>
             </div>
         }
     </div>
@@ -93,9 +189,11 @@
 
 @section Scripts {
     <script>
-        // Pokazuje dodatkowe pola (Czas gry, Ocena) jeżeli status to nie "Planuje"
-        function toggleFields(selectElement, gameId) {
-            var extraFields = document.getElementById('extra-fields-' + gameId);
+        function toggleFields(selectElement) {
+            // Skrypt ignoruje wszystkie inne gry na stronie - szuka tylko w obrębie modyfikowanego elementu 'form'
+            var form = selectElement.closest('.library-form');
+            var extraFields = form.querySelector('.extra-fields');
+
             if (selectElement.value !== "Planuje") {
                 extraFields.style.display = "block";
             } else {

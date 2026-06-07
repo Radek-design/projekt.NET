@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using projekt.NET.Data;
 
 #nullable disable
 
@@ -192,8 +193,17 @@ namespace projekt.NET.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<string>("AvatarPath")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisplayName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
@@ -202,12 +212,6 @@ namespace projekt.NET.Migrations
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
-
-                    b.Property<string>("FirstName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LastName")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -263,7 +267,7 @@ namespace projekt.NET.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<double>("AverageRating")
+                    b.Property<double>("AvarageRating")
                         .HasColumnType("float");
 
                     b.Property<string>("CoverImagePath")
@@ -347,7 +351,7 @@ namespace projekt.NET.Migrations
                     b.ToTable("Producers");
                 });
 
-            modelBuilder.Entity("projekt.NET.Models.Review", b =>
+            modelBuilder.Entity("projekt.NET.Models.Entities.Review", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -359,7 +363,7 @@ namespace projekt.NET.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTime>("CreateAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("GameId")
@@ -457,7 +461,7 @@ namespace projekt.NET.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("projekt.NET.Models.ApplicationUser", null)
+                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -466,7 +470,7 @@ namespace projekt.NET.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("projekt.NET.Models.ApplicationUser", null)
+                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -481,7 +485,7 @@ namespace projekt.NET.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("projekt.NET.Models.ApplicationUser", null)
+                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -490,7 +494,7 @@ namespace projekt.NET.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("projekt.NET.Models.ApplicationUser", null)
+                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -508,7 +512,7 @@ namespace projekt.NET.Migrations
                     b.Navigation("Producer");
                 });
 
-            modelBuilder.Entity("projekt.NET.Models.Review", b =>
+            modelBuilder.Entity("projekt.NET.Models.Entities.Review", b =>
                 {
                     b.HasOne("projekt.NET.Models.Entities.Game", "Game")
                         .WithMany("Reviews")
@@ -516,9 +520,9 @@ namespace projekt.NET.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("projekt.NET.Models.ApplicationUser", "User")
-                        .WithMany("Reviews")
-                        .HasForeignKey("UserId")
+                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -529,27 +533,13 @@ namespace projekt.NET.Migrations
 
             modelBuilder.Entity("projekt.NET.Models.UserGame", b =>
                 {
-                    b.HasOne("projekt.NET.Models.Entities.Game", "Game")
+                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", null)
                         .WithMany("UserGames")
-                        .HasForeignKey("GameId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("projekt.NET.Models.ApplicationUser", "User")
-                        .WithMany("UserGames")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Game");
-
-                    b.Navigation("User");
+                        .HasForeignKey("ApplicationUserId");
                 });
 
-            modelBuilder.Entity("projekt.NET.Models.ApplicationUser", b =>
+            modelBuilder.Entity("projekt.NET.Models.Entities.ApplicationUser", b =>
                 {
-                    b.Navigation("Reviews");
-
                     b.Navigation("UserGames");
                 });
 

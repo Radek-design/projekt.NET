@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿
+
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using projekt.NET.Models;
 using projekt.NET.Models.Entities;
 
-public class AppDbContext : IdentityDbContext<ApplicationUser>
+namespace projekt.NET.Data
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {

@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using projekt.NET.Data;
 using projekt.NET.Models.Entities;
 using projekt.NET.Repositories.Interface;
 using projekt.NET.Repositories.Implementations;
 using projekt.NET.Services;
+using projekt.NET.Data;
+using QuestPDF.Fluent;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 

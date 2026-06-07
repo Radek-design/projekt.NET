@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using projekt.NET.Models.Entities;
-
+using projekt.NET.Data;
 namespace projekt.NET.Controllers
 {
     public class GamesController : Controller

@@ -5,14 +5,15 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using projekt.NET.Data;
 
 #nullable disable
 
 namespace projekt.NET.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260527115549_GameDB")]
-    partial class GameDB
+    [Migration("20260607143738_MergerApplicationUser")]
+    partial class MergerApplicationUser
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -187,7 +188,7 @@ namespace projekt.NET.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("projekt.NET.Models.ApplicationUser", b =>
+            modelBuilder.Entity("projekt.NET.Models.Entities.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -195,8 +196,17 @@ namespace projekt.NET.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<string>("AvatarPath")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisplayName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
@@ -460,7 +470,7 @@ namespace projekt.NET.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("projekt.NET.Models.ApplicationUser", null)
+                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -469,7 +479,7 @@ namespace projekt.NET.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("projekt.NET.Models.ApplicationUser", null)
+                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -484,7 +494,7 @@ namespace projekt.NET.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("projekt.NET.Models.ApplicationUser", null)
+                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -493,7 +503,7 @@ namespace projekt.NET.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("projekt.NET.Models.ApplicationUser", null)
+                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -519,7 +529,7 @@ namespace projekt.NET.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("projekt.NET.Models.ApplicationUser", "User")
+                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", "User")
                         .WithMany("Reviews")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -538,7 +548,7 @@ namespace projekt.NET.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("projekt.NET.Models.ApplicationUser", "User")
+                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", "User")
                         .WithMany("UserGames")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -549,7 +559,7 @@ namespace projekt.NET.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("projekt.NET.Models.ApplicationUser", b =>
+            modelBuilder.Entity("projekt.NET.Models.Entities.ApplicationUser", b =>
                 {
                     b.Navigation("Reviews");
 

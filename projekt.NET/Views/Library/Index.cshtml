@@ -22,7 +22,7 @@
             foreach (var item in Model)
             {
                 <div class="col-md-4 mb-4">
-                    <div class="card h-100 shadow-sm">
+                    <div class="card h-100 shadow-sm bg-dark text-white border-secondary">
                         <img src="@(string.IsNullOrEmpty(item.Game?.CoverImagePath) ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png" : item.Game.CoverImagePath)"
                              class="card-img-top" alt="@item.Game?.Title" style="height: 250px; object-fit: cover;">
 

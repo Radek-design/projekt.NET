@@ -35,7 +35,8 @@ namespace projekt.NET.Controllers
             var user = await _userManager.FindByEmailAsync(email);
             if (user == null)
             {
-                ViewBag.Error = "Nieprawidłowy email lub hasło.";
+                // ZMIANA: Używamy ModelState zamiast ViewBag
+                ModelState.AddModelError(string.Empty, "Nie znaleziono konta z takim adresem e-mail.");
                 return View();
 
             }
@@ -49,7 +50,8 @@ namespace projekt.NET.Controllers
             }
             else
             {
-                ViewBag.Error = "Nieprawidłowy email lub hasło.";
+                // ZMIANA: Używamy ModelState zamiast ViewBag
+                ModelState.AddModelError(string.Empty, "Wprowadzono nieprawidłowe hasło.");
                 return View();
             }
         }
@@ -85,7 +87,10 @@ namespace projekt.NET.Controllers
             //jeśli rejestracje się nie powiodła, wyświetlamy błąd
             else
             {
-                ViewBag.Error = "Nie można utworzyć konta. Upewnij się, że hasło spełnia wymagania.";
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
                 return View();
             }
 

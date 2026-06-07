@@ -185,7 +185,7 @@ namespace projekt.NET.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("projekt.NET.Models.ApplicationUser", b =>
+            modelBuilder.Entity("projekt.NET.Models.Entities.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -212,6 +212,12 @@ namespace projekt.NET.Migrations
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -267,7 +273,7 @@ namespace projekt.NET.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<double>("AvarageRating")
+                    b.Property<double>("AverageRating")
                         .HasColumnType("float");
 
                     b.Property<string>("CoverImagePath")
@@ -351,7 +357,7 @@ namespace projekt.NET.Migrations
                     b.ToTable("Producers");
                 });
 
-            modelBuilder.Entity("projekt.NET.Models.Entities.Review", b =>
+            modelBuilder.Entity("projekt.NET.Models.Review", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -363,7 +369,7 @@ namespace projekt.NET.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreateAt")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("GameId")
@@ -512,7 +518,7 @@ namespace projekt.NET.Migrations
                     b.Navigation("Producer");
                 });
 
-            modelBuilder.Entity("projekt.NET.Models.Entities.Review", b =>
+            modelBuilder.Entity("projekt.NET.Models.Review", b =>
                 {
                     b.HasOne("projekt.NET.Models.Entities.Game", "Game")
                         .WithMany("Reviews")
@@ -521,8 +527,8 @@ namespace projekt.NET.Migrations
                         .IsRequired();
 
                     b.HasOne("projekt.NET.Models.Entities.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserID")
+                        .WithMany("Reviews")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -533,13 +539,27 @@ namespace projekt.NET.Migrations
 
             modelBuilder.Entity("projekt.NET.Models.UserGame", b =>
                 {
-                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", null)
+                    b.HasOne("projekt.NET.Models.Entities.Game", "Game")
                         .WithMany("UserGames")
-                        .HasForeignKey("ApplicationUserId");
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("projekt.NET.Models.Entities.ApplicationUser", "User")
+                        .WithMany("UserGames")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Game");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("projekt.NET.Models.Entities.ApplicationUser", b =>
                 {
+                    b.Navigation("Reviews");
+
                     b.Navigation("UserGames");
                 });
 

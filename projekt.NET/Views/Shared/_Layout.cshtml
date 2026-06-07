@@ -48,8 +48,22 @@
                         </ul>
                     </div>
                 </div>
-                <div class="d-flex align-items-center">
-                    <a class="nav-link btn btn-outline-info text-info me-2" href="#">Zaloguj</a>
+                <div class="d-flex align-items-center ms-auto">
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        <div class="me-3 text-white">
+                            Witaj, <span class="fw-bold text-primary">@User.Identity.Name</span>!
+                        </div>
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="form-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Wyloguj się</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="btn btn-sm btn-primary px-3 fw-bold">
+                            Zaloguj się / Rejestracja
+                        </a>
+                    }
                 </div>
             </div>
         </nav>

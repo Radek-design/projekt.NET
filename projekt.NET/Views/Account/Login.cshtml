@@ -1,0 +1,43 @@
+﻿@{
+    ViewData["Title"] = "Logowanie";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow border-0 rounded-3">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h4 class="mb-0 fw-bold">Zaloguj się do panelu</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-controller="Account" asp-action="Login" method="post">
+
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger py-2">
+                                <div asp-validation-summary="All" class="small text-danger"></div>
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label fw-semibold">Adres E-mail</label>
+                            <input type="email" name="email" id="email" class="form-control" required placeholder="np. nazwa@domena.pl" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="password" class="form-label fw-semibold">Hasło</label>
+                            <input type="password" name="password" id="password" class="form-control" required placeholder="Wprowadź hasło" />
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary fw-bold py-2">Zaloguj się</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3 bg-light border-0">
+                    <p class="mb-0 text-muted">Nie masz jeszcze konta? <a asp-controller="Account" asp-action="Register" class="text-primary fw-bold text-decoration-none">Zarejestruj się tutaj</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

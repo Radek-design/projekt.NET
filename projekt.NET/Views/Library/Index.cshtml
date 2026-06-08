@@ -1,39 +1,172 @@
 ﻿@model IEnumerable<projekt.NET.Models.UserGame>
-
 @{
-    ViewData["Title"] = "Moja Biblioteka Gier";
+    ViewData["Title"] = "Moja Biblioteka";
 }
 
 <div class="container mt-4">
-    <h2>Moja Biblioteka Gier</h2>
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <i class="bi bi-collection-play" style="font-size: 2.5rem; color: var(--accent-primary);"></i>
+        <h1 class="display-6 fw-bold text-white m-0">Twój Profil Gracza</h1>
+    </div>
 
-    <div class="row">
-        @if (Model != null && Model.Any())
-        {
-            foreach (var item in Model)
-            {
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 shadow-sm">
-                        <img src="@(string.IsNullOrEmpty(item.Game?.CoverImagePath) ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png" : item.Game.CoverImagePath)"
-                             class="card-img-top" alt="@item.Game?.Title" style="height: 250px; object-fit: cover;">
-                        
-                        <div class="card-body">
-                            <h5 class="card-title">@(item.Game?.Title ?? "Nieznany tytuł")</h5>
-                            <p class="card-text">
-                                <strong>Status:</strong> <span class="badge bg-primary">@item.Status</span><br />
-                                <strong>Czas gry:</strong> @item.PlayTimeHours godz.<br />
-                                <strong>Moja ocena:</strong> @(item.Rating.HasValue ? $"{item.Rating}/10" : "Brak")
-                            </p>
-                        </div>
+    <div class="row g-4">
+        <div class="col-12 col-md-4 col-lg-3">
+            <div class="glass-sidebar rounded-4 p-4 text-center d-flex flex-column h-100">
+
+                <div class="position-relative d-inline-block mx-auto mb-3">
+                    <img src="@(string.IsNullOrEmpty(ViewBag.ProfilePicture) ? "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" : ViewBag.ProfilePicture)"
+                         class="rounded-circle border border-2 border-info shadow-sm"
+                         alt="Avatar"
+                         style="width: 140px; height: 140px; object-fit: cover; box-shadow: 0 0 15px var(--accent-primary-glow) !important;">
+                </div>
+
+                <h4 class="text-white fw-bold mb-4">@User.Identity?.Name</h4>
+
+                <form asp-action="UpdateProfilePicture" method="post" enctype="multipart/form-data" class="mb-4 text-start">
+                    <label class="small text-muted mb-1"><i class="bi bi-camera"></i> Zmień avatar</label>
+                    <input type="file" name="avatarFile" accept="image/*" class="form-control form-control-sm bg-dark text-white glass-input mb-2" required>
+                    <button type="submit" class="btn btn-outline-info btn-sm w-100" style="border-radius: 8px;">
+                        <i class="bi bi-cloud-arrow-up"></i> Wgraj nowy
+                    </button>
+                </form>
+
+                <div class="text-start mb-4">
+                    <h6 class="text-muted fw-bold mb-3 border-bottom border-glass pb-2">Szybkie statystyki</h6>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-light small"><i class="bi bi-controller me-2"></i>Liczba gier:</span>
+                        <span class="badge neon-badge fs-6">@ViewBag.TotalGames</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-light small"><i class="bi bi-clock-history me-2"></i>Łączny czas:</span>
+                        <strong class="text-info">@ViewBag.TotalTime h</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2" title="Na podstawie recenzji">
+                        <span class="text-light small"><i class="bi bi-graph-up-arrow me-2 text-success"></i>Najwyższa ocena:</span>
+                        <strong class="text-warning"><i class="bi bi-star-fill"></i> @(ViewBag.HighestRating > 0 ? ViewBag.HighestRating : "-")</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center" title="Na podstawie recenzji">
+                        <span class="text-light small"><i class="bi bi-graph-down-arrow me-2 text-danger"></i>Najniższa ocena:</span>
+                        <strong class="text-danger"><i class="bi bi-star-fill"></i> @(ViewBag.LowestRating > 0 ? ViewBag.LowestRating : "-")</strong>
                     </div>
                 </div>
-            }
-        }
-        else
-        {
-            <div class="col-12">
-                <div class="alert alert-info">Twoja biblioteka jest pusta. Dodaj jakieś gry, aby zacząć je śledzić!</div>
+
+                <div class="mt-auto d-grid gap-2">
+                    <a asp-action="GenerateReport" class="btn btn-danger btn-sm fw-bold d-flex align-items-center justify-content-center gap-2 py-2" style="border-radius: 8px; background-color: rgba(220, 53, 69, 0.2); border-color: #dc3545;">
+                        <i class="bi bi-file-earmark-pdf fs-5"></i> Pobierz Raport PDF
+                    </a>
+                    <a asp-action="MyReviews" class="btn btn-warning btn-sm fw-bold text-dark d-flex align-items-center justify-content-center gap-2 py-2" style="border-radius: 8px;">
+                        <i class="bi bi-chat-left-text fs-5"></i> Moje Recenzje
+                    </a>
+                    <a asp-action="Screenshots" class="btn btn-info btn-sm fw-bold text-dark d-flex align-items-center justify-content-center gap-2 py-2" style="border-radius: 8px;">
+                        <i class="bi bi-images fs-5"></i> Moja Galeria
+                    </a>
+                </div>
             </div>
-        }
+        </div>
+
+        <div class="col-12 col-md-8 col-lg-9">
+
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 border-bottom border-glass pb-3 gap-3">
+                <h3 class="text-warning m-0 fw-bold"><i class="bi bi-joystick"></i> Moja Kolekcja</h3>
+
+                <form method="get" asp-action="Index" class="m-0 w-100 w-md-auto">
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark text-muted border-secondary d-none d-sm-flex"><i class="bi bi-funnel"></i></span>
+                        <select name="genreId" class="form-select bg-dark text-white glass-input" onchange="this.form.submit()">
+                            <option value="">Wszystkie gatunki</option>
+                            @foreach (var genre in ViewBag.Genres)
+                            {
+                                if (ViewBag.SelectedGenre == genre.Id)
+                                {
+                                    <option value="@genre.Id" selected>@genre.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@genre.Id">@genre.Name</option>
+                                }
+                            }
+                        </select>
+                        <noscript><button type="submit" class="btn btn-primary">Filtruj</button></noscript>
+                    </div>
+                </form>
+            </div>
+
+            <div class="row g-4">
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var item in Model)
+                    {
+                        <div class="col-12 col-sm-6 col-xl-4">
+                            <div class="glass-card h-100 d-flex flex-column position-relative overflow-hidden">
+
+                                <a asp-controller="Games" asp-action="Details" asp-route-id="@item.GameId" class="d-block overflow-hidden">
+                                    <img src="@(string.IsNullOrEmpty(item.Game?.CoverImagePath) ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png" : item.Game.CoverImagePath)"
+                                         class="w-100 border-bottom border-glass" alt="Okładka"
+                                         style="height: 180px; object-fit: cover; transition: transform 0.3s ease;"
+                                         onmouseover="this.style.transform='scale(1.05)'"
+                                         onmouseout="this.style.transform='scale(1)'">
+                                </a>
+
+                                <div class="card-body p-3 d-flex flex-column flex-grow-1">
+                                    <h6 class="text-white fw-bold mb-2">@item.Game?.Title</h6>
+
+                                    <div class="mb-3">
+                                        <span class="small text-muted me-1">Status:</span>
+                                        @if (item.Status == "Ukończona")
+                                        {
+                                            <span class="badge bg-success bg-opacity-25 border border-success text-success">@item.Status</span>
+                                        }
+                                        else if (item.Status == "W trakcie")
+                                        {
+                                            <span class="badge bg-warning bg-opacity-25 border border-warning text-warning">@item.Status</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-info bg-opacity-25 border border-info text-info">@item.Status</span>
+                                        }
+                                    </div>
+
+                                    <form asp-action="EditGame" method="post" class="mt-auto p-3 rounded" style="background-color: rgba(0,0,0,0.2); border: 1px dashed var(--border-glass);">
+                                        <input type="hidden" name="gameId" value="@item.GameId" />
+
+                                        <label class="small text-muted mb-1"><i class="bi bi-pencil-square"></i> Aktualizuj postęp:</label>
+
+                                        <select name="status" class="form-select form-select-sm bg-dark text-white glass-input mb-2">
+                                            <option value="Planuje" selected="@(item.Status == "Planuje")">Planuje</option>
+                                            <option value="W trakcie" selected="@(item.Status == "W trakcie")">W trakcie</option>
+                                            <option value="Ukończona" selected="@(item.Status == "Ukończona")">Ukończona</option>
+                                        </select>
+
+                                        <div class="input-group input-group-sm mb-3">
+                                            <span class="input-group-text bg-dark text-muted border-secondary"><i class="bi bi-clock"></i> Godz.</span>
+                                            <input type="number" name="playTimeHours" value="@item.PlayTimeHours" min="0" class="form-control bg-dark text-white glass-input" />
+                                        </div>
+
+                                        <button type="submit" class="btn btn-sm btn-outline-warning w-100 fw-bold" style="border-radius: 6px;">
+                                            <i class="bi bi-save me-1"></i> Zapisz zmiany
+                                        </button>
+                                    </form>
+
+                                    <a asp-controller="Games" asp-action="Details" asp-route-id="@item.GameId" class="btn btn-sm btn-neon w-100 mt-2 fw-bold text-uppercase" style="font-size: 0.75rem;">
+                                        Napisz / Zobacz recenzję
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12">
+                        <div class="alert glass-card text-muted d-flex align-items-center gap-3">
+                            <i class="bi bi-controller fs-4 text-warning"></i>
+                            Twoja biblioteka jest w tym momencie pusta. Przejdź do Katalogu Gier, aby dodać swoje pierwsze tytuły!
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </div>
     </div>
 </div>

@@ -28,5 +28,6 @@ namespace projekt.NET.Models.Entities
 
         // Relacja do tabeli biblioteki użytkowników
         public ICollection<UserGame> UserGames { get; set; } = new HashSet<UserGame>();
+        public ICollection<Screenshot> Screenshots { get; set; } = new HashSet<Screenshot>();
     }
 }

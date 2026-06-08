@@ -1,0 +1,242 @@
+﻿@model IEnumerable<projekt.NET.Models.Entities.Game>
+
+@{
+    ViewData["Title"] = "Wszystkie gry z bazy";
+}
+
+<div class="container mt-4">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <i class="bi bi-joystick" style="font-size: 2.5rem; color: var(--accent-primary);"></i>
+        <h1 class="display-6 fw-bold text-white m-0">Katalog Gier</h1>
+    </div>
+
+    @if (TempData["ErrorMsg"] != null)
+    {
+        <div class="alert glass-card border-danger text-light d-flex align-items-center gap-3 mb-4 p-3">
+            <i class="bi bi-x-circle-fill fs-3 text-danger"></i>
+            <div>
+                <strong class="d-block text-danger mb-1">Błąd!</strong>
+                @TempData["ErrorMsg"]
+            </div>
+        </div>
+    }
+    @if (TempData["SuccessMsg"] != null)
+    {
+        <div class="alert glass-card border-success text-light d-flex align-items-center gap-3 mb-4 p-3">
+            <i class="bi bi-check-circle-fill fs-3 text-success"></i>
+            <div>
+                <strong class="d-block text-success mb-1">Sukces!</strong>
+                @TempData["SuccessMsg"]
+            </div>
+        </div>
+    }
+
+    @if (User.IsInRole("Moderator"))
+    {
+        <div class="glass-sidebar p-4 rounded-4 border-accent mb-4">
+            <div class="d-flex align-items-center gap-2 mb-3 border-bottom border-glass pb-3">
+                <i class="bi bi-shield-lock text-warning fs-4"></i>
+                <h4 class="h5 m-0 fw-bold text-warning">Narzędzia Moderatora: Dodaj Nową Grę do Katalogu</h4>
+            </div>
+
+            <form asp-controller="Games" asp-action="Create" method="post" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label small text-warning fw-medium">Tytuł Gry</label>
+                    <input type="text" name="title" class="form-control bg-dark text-white glass-input" required placeholder="Wpisz pełny tytuł..." />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small text-warning fw-medium">Data Premiery</label>
+                    <input type="date" name="releaseDate" class="form-control bg-dark text-white glass-input" required />
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label small text-warning fw-medium">Krótki opis</label>
+                    <textarea name="description" class="form-control bg-dark text-white glass-input" rows="2" placeholder="O czym jest ta gra..."></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small text-warning fw-medium">Link do okładki (URL)</label>
+                    <input type="url" name="coverImagePath" class="form-control bg-dark text-white glass-input" placeholder="https://..." />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small text-warning fw-medium">Wydawca (Producent)</label>
+                    <select name="producerId" class="form-select bg-dark text-white glass-input" required>
+                        @if (ViewBag.Producers != null)
+                        {
+                            foreach (var producer in ViewBag.Producers)
+                            {
+                                <option value="@producer.Id">@producer.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small text-warning fw-medium">Platformy (Trzymaj CTRL)</label>
+                    <select name="selectedPlatforms" class="form-select bg-dark text-white glass-input" multiple style="height: 100px;">
+                        @if (ViewBag.Platforms != null)
+                        {
+                            foreach (var platform in ViewBag.Platforms)
+                            {
+                                <option value="@platform.Id">@platform.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small text-warning fw-medium">Gatunki (Trzymaj CTRL)</label>
+                    <select name="selectedGenres" class="form-select bg-dark text-white glass-input" multiple style="height: 100px;">
+                        @if (ViewBag.Genres != null)
+                        {
+                            foreach (var genre in ViewBag.Genres)
+                            {
+                                <option value="@genre.Id">@genre.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-12 text-end mt-4">
+                    <button type="submit" class="btn btn-warning fw-bold px-5 py-2 shadow-sm">
+                        <i class="bi bi-floppy-fill me-2"></i> Zapisz grę w bazie
+                    </button>
+                </div>
+            </form>
+        </div>
+    }
+
+    <div class="glass-card p-3 mb-4 d-flex justify-content-between align-items-center">
+        <form method="get" asp-controller="Games" asp-action="Index" class="d-flex align-items-center w-100 w-md-auto">
+            <label class="me-3 fw-bold text-muted d-none d-md-block"><i class="bi bi-funnel"></i> Filtruj:</label>
+            <div class="input-group">
+                <span class="input-group-text bg-dark border-secondary text-info"><i class="bi bi-tags"></i></span>
+                <select name="genreId" class="form-select bg-dark text-white glass-input" onchange="this.form.submit()" style="min-width: 250px;">
+                    <option value="">-- Wszystkie gatunki --</option>
+                    @if (ViewBag.Genres != null)
+                    {
+                        foreach (var genre in ViewBag.Genres)
+                        {
+                            if (ViewBag.SelectedGenre == genre.Id)
+                            {
+                                <option value="@genre.Id" selected="selected">@genre.Name</option>
+                            }
+                            else
+                            {
+                                <option value="@genre.Id">@genre.Name</option>
+                            }
+                        }
+                    }
+                </select>
+            </div>
+            <noscript>
+                <button type="submit" class="btn btn-neon ms-2">Filtruj</button>
+            </noscript>
+        </form>
+    </div>
+
+    <div class="row g-4">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var game in Model)
+            {
+                <div class="col-sm-6 col-lg-4 col-xl-3">
+                    <div class="glass-card h-100 d-flex flex-column position-relative overflow-hidden">
+
+                        <a asp-controller="Games" asp-action="Details" asp-route-id="@game.Id" class="d-block overflow-hidden">
+                            <img src="@(string.IsNullOrEmpty(game.CoverImagePath) ? "https://images.igdb.com/igdb/image/upload/t_cover_big/nocover.png" : game.CoverImagePath)"
+                                 class="w-100 border-bottom border-glass" alt="@game.Title"
+                                 style="height: 320px; object-fit: cover; transition: transform 0.3s ease;"
+                                 onmouseover="this.style.transform='scale(1.05)'"
+                                 onmouseout="this.style.transform='scale(1)'">
+                        </a>
+
+                        <div class="card-body p-3 d-flex flex-column flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <a asp-controller="Games" asp-action="Details" asp-route-id="@game.Id" class="text-decoration-none">
+                                    <h5 class="h6 text-white fw-bold mb-0 lh-base hover-info">@game.Title</h5>
+                                </a>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                                <span class="badge bg-dark border border-secondary text-light">
+                                    <i class="bi bi-calendar3"></i> @game.ReleaseDate.ToString("yyyy")
+                                </span>
+                                <span class="badge border border-warning" style="background-color: rgba(255, 193, 7, 0.1); color: #ffc107;">
+                                    <i class="bi bi-star-fill"></i> @(game.AverageRating > 0 ? game.AverageRating.ToString("0.0") : "Brak")
+                                </span>
+                            </div>
+
+                            <p class="small text-muted mb-4 pb-2 border-bottom border-glass">
+                                @if (game.Genres != null && game.Genres.Any())
+                                {
+                                    <i class="bi bi-tag-fill me-1 text-info"></i>
+                                    @string.Join(", ", game.Genres.Select(g => g.Name))
+                                }
+                                else
+                                {
+                                    <span><i class="bi bi-tag me-1"></i> Brak gatunku</span>
+                                }
+                            </p>
+
+                            <form asp-controller="Library" asp-action="AddGame" method="post" class="mt-auto library-form">
+                                <input type="hidden" name="gameId" value="@game.Id" />
+
+                                <div class="mb-2">
+                                    <select name="status" class="form-select form-select-sm bg-dark text-white glass-input" required onchange="toggleFields(this)">
+                                        <option value="Planuje">Planuje zagrać</option>
+                                        <option value="W trakcie">W trakcie gry</option>
+                                        <option value="Ukończona">Ukończona</option>
+                                    </select>
+                                </div>
+
+                                <div class="extra-fields mb-2" style="display: none;">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-dark border-secondary text-muted"><i class="bi bi-clock-history"></i></span>
+                                        <input type="number" name="playTimeHours" class="form-control bg-dark text-white glass-input" placeholder="Czas (godz.)" min="0" value="0" />
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-neon btn-sm w-100 fw-bold d-flex justify-content-center align-items-center gap-2">
+                                    <i class="bi bi-plus-lg"></i> Dodaj do biblioteki
+                                </button>
+                            </form>
+
+                            @if (User.IsInRole("Moderator"))
+                            {
+                                <form asp-controller="Games" asp-action="DeleteGame" method="post" class="mt-2"
+                                      onsubmit="return confirm('Czy na pewno chcesz usunąć grę @game.Title?\nTa akcja usunie ją również ze wszystkich bibliotek graczy i wykasuje jej recenzje.\nTo działanie jest nieodwracalne!');">
+                                    <input type="hidden" name="id" value="@game.Id" />
+                                    <button type="submit" class="btn btn-outline-danger btn-sm w-100 fw-bold" style="border-radius: 8px;">
+                                        <i class="bi bi-trash"></i> Usuń grę
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="alert glass-card text-muted d-flex align-items-center gap-3">
+                    <i class="bi bi-search fs-4 text-neon"></i>
+                    Brak gier spełniających wybrane kryteria w bazie.
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleFields(selectElement) {
+            // Skrypt ignoruje wszystkie inne gry na stronie - szuka tylko w obrębie modyfikowanego elementu 'form'
+            var form = selectElement.closest('.library-form');
+            var extraFields = form.querySelector('.extra-fields');
+
+            if (selectElement.value !== "Planuje") {
+                extraFields.style.display = "block";
+            } else {
+                extraFields.style.display = "none";
+            }
+        }
+    </script>
+}

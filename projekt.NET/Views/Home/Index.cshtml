@@ -3,112 +3,156 @@
     ViewData["Title"] = "Strona Główna";
 }
 
-<div class="container py-3">
-    <div class="text-center mb-5 py-3 bg-dark border border-secondary rounded shadow-sm">
-        <h1 class="display-4 fw-bold text-info">Witaj w Centrum Gier</h1>
-        <p class="lead text-muted mb-0">Twoje zintegrowane miejsce na wiadomości, kolekcje gier oraz statystyki.</p>
+<div class="container mt-4">
+    <div class="glass-hero p-4 p-md-5 mb-5 rounded-4 position-relative overflow-hidden text-center text-md-start d-flex align-items-center">
+        <div class="hero-glow"></div>
+        <div class="position-relative z-1 w-100 d-md-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-5 fw-bold text-white mb-2">
+                    Witaj w <span class="text-neon">Centrum Gier</span>
+                </h1>
+                <p class="lead text-muted mb-0">Twoje zintegrowane miejsce na wiadomości, kolekcje gier oraz statystyki.</p>
+            </div>
+            <i class="bi bi-controller d-none d-md-block" style="font-size: 5rem; color: var(--border-glass);"></i>
+        </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-8">
-
-            @if (User.IsInRole("Moderator"))
-            {
-                <div class="card bg-dark text-white border-info mb-4 shadow-sm">
-                    <div class="card-header bg-info text-dark fw-bold">
-                        <i class="bi bi-plus-circle"></i> Panel Moderatora: Dodaj Nową Premierę
-                    </div>
-                    <div class="card-body">
-                        <form asp-controller="Home" asp-action="AddPremiere" method="post">
-                            <div class="mb-2">
-                                <label class="form-label small text-info fw-bold">Tytuł Gry</label>
-                                <input type="text" name="title" class="form-control form-control-sm bg-dark text-white border-secondary" required placeholder="Wpisz nazwę nadchodzącej gry" />
-                            </div>
-                            <div class="mb-2">
-                                <label class="form-label small text-info fw-bold">Data Premiery</label>
-                                <input type="date" name="releaseDate" class="form-control form-control-sm bg-dark text-white border-secondary" required />
-                            </div>
-                            <div class="mb-2">
-                                <label class="form-label small text-info fw-bold">Platformy (Przytrzymaj CTRL aby zaznaczyć kilka)</label>
-                                <select name="selectedPlatforms" class="form-select form-select-sm bg-dark text-white border-secondary" multiple style="height: 90px;">
-                                    @if (ViewBag.Platforms != null)
-                                    {
-                                        foreach (var platform in ViewBag.Platforms)
-                                        {
-                                            <option value="@platform.Id">@platform.Name</option>
-                                        }
-                                    }
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small text-info fw-bold">Gatunki (Przytrzymaj CTRL aby zaznaczyć kilka)</label>
-                                <select name="selectedGenres" class="form-select form-select-sm bg-dark text-white border-secondary" multiple style="height: 90px;">
-                                    @if (ViewBag.Genres != null)
-                                    {
-                                        foreach (var genre in ViewBag.Genres)
-                                        {
-                                            <option value="@genre.Id">@genre.Name</option>
-                                        }
-                                    }
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-info btn-sm text-dark fw-bold w-100">Zapisz premierę w bazie</button>
-                        </form>
-                    </div>
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-glass">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-cpu fs-4 text-neon"></i>
+                    <h2 class="h4 m-0 fw-bold text-white">Najnowsze Wiadomości</h2>
                 </div>
-            }
-
-            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
-                <h3 class="text-info mb-0"><i class="bi bi-newspaper"></i> Najnowsze Wiadomości</h3>
                 <form action="/Home/GenerateAiNews" method="post" class="m-0">
-                    <button type="submit" class="btn btn-outline-info btn-sm">
+                    <button type="submit" class="btn btn-neon btn-sm d-flex align-items-center gap-2">
                         <i class="bi bi-magic"></i> Generuj przez AI
                     </button>
                 </form>
             </div>
 
-            @if (Model != null && Model.Any())
-            {
-                foreach (var news in Model)
+            <div class="row g-4">
+                @if (Model != null && Model.Any())
                 {
-                    <div class="card mb-4 bg-dark text-white border-secondary shadow-sm p-3">
-                        <h4 class="text-info">@news.Title</h4>
-                        <p>@news.Summary</p>
-                        <small class="text-muted">
-                            Źródło: <strong class="text-warning">@news.Source</strong> | Dodano: @news.PublishDate.ToString("dd.MM.yyyy")
-                        </small>
-                    </div>
-                }
-            }
-            else
-            {
-                <div class="alert alert-secondary">Brak nowych wiadomości w tym momencie.</div>
-            }
-        </div>
-
-        <div class="col-md-4">
-            <h3 class="mb-4 text-warning border-bottom pb-2"><i class="bi bi-calendar-event"></i> Premiery z bazy danych</h3>
-
-            <div class="list-group shadow">
-                @if (ViewBag.Premieres != null && ((IEnumerable<projekt.NET.Models.Entities.Premiere>)ViewBag.Premieres).Any())
-                {
-                    foreach (var premiere in (IEnumerable<projekt.NET.Models.Entities.Premiere>)ViewBag.Premieres)
+                    foreach (var news in Model)
                     {
-                        <div class="list-group-item bg-dark text-white border-secondary mb-3 rounded shadow-sm p-3">
-                            <div class="d-flex w-100 justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0 text-warning fw-bold fs-5">@premiere.Title</h6>
-                                <span class="badge bg-secondary text-light">@premiere.ReleaseDate.ToString("dd.MM.yyyy")</span>
+                        <div class="col-md-6">
+                            <div class="glass-card h-100 d-flex flex-column p-4">
+                                <div class="mb-3 d-flex justify-content-between align-items-start">
+                                    <span class="badge neon-badge">
+                                        <i class="bi bi-robot me-1"></i> @news.Source
+                                    </span>
+                                    <small class="text-muted"><i class="bi bi-calendar3 me-1"></i> @news.PublishDate.ToString("dd.MM.yyyy")</small>
+                                </div>
+
+                                <h3 class="h5 text-white mb-3 fw-bold">@news.Title</h3>
+
+                                <p class="text-muted flex-grow-1 small lh-lg">
+                                    @news.Summary
+                                </p>
                             </div>
-                            <p class="mb-1 small text-muted">Platformy: <span class="text-info">@premiere.Platforms</span></p>
-                            <p class="mb-0 small text-muted">Gatunki: <span class="text-success">@premiere.Genres</span></p>
                         </div>
                     }
                 }
                 else
                 {
-                    <div class="alert alert-secondary">Brak informacji o najbliższych premierach w bazie danych.</div>
+                    <div class="col-12">
+                        <div class="alert glass-card text-muted d-flex align-items-center gap-3">
+                            <i class="bi bi-info-circle fs-4 text-neon"></i>
+                            Brak nowych wiadomości w tym momencie. Wygeneruj je za pomocą AI!
+                        </div>
+                    </div>
                 }
             </div>
+        </div>
+
+        <div class="col-lg-4">
+
+            <div class="glass-sidebar p-4 rounded-4 mb-4">
+                <div class="d-flex align-items-center mb-3 gap-2 border-bottom border-glass pb-2">
+                    <i class="bi bi-calendar-star fs-4 text-purple"></i>
+                    <h3 class="h5 m-0 fw-bold text-white">Premiery z bazy</h3>
+                </div>
+
+                <div class="list-group list-group-flush glass-list mt-3">
+                    @if (ViewBag.Premieres != null && ((IEnumerable<projekt.NET.Models.Entities.Premiere>)ViewBag.Premieres).Any())
+                    {
+                        foreach (var premiere in (IEnumerable<projekt.NET.Models.Entities.Premiere>)ViewBag.Premieres)
+                        {
+                            <div class="list-group-item bg-transparent border-0 border-bottom px-0 py-3" style="border-color: rgba(255,255,255,0.05) !important;">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0 text-white fw-semibold">@premiere.Title</h6>
+                                    <span class="badge bg-purple-glow rounded p-2">@premiere.ReleaseDate.ToString("dd.MM.yyyy")</span>
+                                </div>
+                                <div class="small text-muted mb-1">
+                                    <i class="bi bi-pc-display me-1 text-info"></i> @premiere.Platforms
+                                </div>
+                                <div class="small text-muted">
+                                    <i class="bi bi-tags me-1 text-success"></i> @premiere.Genres
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-muted small p-2 text-center">
+                            Brak informacji o najbliższych premierach.
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (User.IsInRole("Moderator"))
+            {
+                <div class="glass-sidebar p-4 rounded-4 border-accent">
+                    <div class="d-flex align-items-center mb-2 gap-2">
+                        <i class="bi bi-shield-lock text-warning fs-5"></i>
+                        <h4 class="h6 m-0 fw-bold text-warning">Panel Moderatora</h4>
+                    </div>
+                    <p class="small text-muted mb-4 pb-2 border-bottom border-glass">Dodaj Nową Premierę</p>
+
+                    <form asp-controller="Home" asp-action="AddPremiere" method="post">
+                        <div class="mb-3">
+                            <label class="form-label text-light small fw-medium">Tytuł Gry</label>
+                            <input type="text" name="title" class="form-control bg-dark text-white glass-input" placeholder="Wpisz nazwę gry" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-light small fw-medium">Data Premiery</label>
+                            <input type="date" name="releaseDate" class="form-control bg-dark text-white glass-input" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-light small fw-medium">Platformy</label>
+                            <select name="selectedPlatforms" class="form-select bg-dark text-white glass-input" multiple style="height: 90px;">
+                                @if (ViewBag.Platforms != null)
+                                {
+                                    foreach (var platform in ViewBag.Platforms)
+                                    {
+                                        <option value="@platform.Id">@platform.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-light small fw-medium">Gatunki</label>
+                            <select name="selectedGenres" class="form-select bg-dark text-white glass-input" multiple style="height: 90px;">
+                                @if (ViewBag.Genres != null)
+                                {
+                                    foreach (var genre in ViewBag.Genres)
+                                    {
+                                        <option value="@genre.Id">@genre.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning w-100 fw-bold shadow-sm d-flex justify-content-center align-items-center gap-2">
+                            <i class="bi bi-plus-lg"></i> Zapisz w bazie
+                        </button>
+                    </form>
+                </div>
+            }
         </div>
     </div>
 </div>

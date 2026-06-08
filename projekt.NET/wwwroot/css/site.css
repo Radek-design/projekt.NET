@@ -1,3 +1,21 @@
+/* Import nowoczesnego fontu */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    /* Paleta Gamingowa */
+    --bg-base: #0b0d14; /* Bardzo głęboki ciemny granat/czerń */
+    --bg-surface: #151822; /* Nieco jaśniejsze tło dla kart */
+    --bg-surface-glass: rgba(21, 24, 34, 0.7); /* Tło dla navbaru */
+
+    --accent-primary: #00e5ff; /* Neonowy błękit/Cyan */
+    --accent-primary-glow: rgba(0, 229, 255, 0.4);
+    --accent-secondary: #b829ff; /* Fiolet */
+
+    --text-main: #f8f9fa;
+    --text-muted: #94a3b8;
+    --border-glass: rgba(255, 255, 255, 0.08);
+}
+
 html {
     font-size: 14px;
     position: relative;
@@ -11,50 +29,168 @@ html {
 }
 
 body {
-    margin-bottom: 60px;
-    background-color: #121212 !important; /* Głęboka czerń */
-    color: #e0e0e0 !important; /* Jasnoszary tekst, nie męczy wzroku */
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin-bottom: 80px; /* Zwiększony margines pod stopkę */
+    background-color: var(--bg-base) !important;
+    color: var(--text-main) !important;
+    font-family: 'Poppins', sans-serif;
+    /* Dodanie subtelnego gradientowego światła w tle */
+    background-image: radial-gradient(circle at top right, rgba(0, 229, 255, 0.05), transparent 40%), radial-gradient(circle at bottom left, rgba(184, 41, 255, 0.05), transparent 40%);
+    background-attachment: fixed;
 }
 
 /* Dostosowanie nagłówków */
 h1, h2, h3, h4, h5, h6 {
-    color: #ffffff;
+    color: var(--text-main);
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
-/* Własny styl dla navbaru */
-.custom-navbar {
-    background-color: #1a1a1a !important;
+/* ========= NAVBAR & GLASSMORPHISM ========= */
+.glass-nav {
+    background-color: var(--bg-surface-glass) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-glass);
+    transition: all 0.3s ease;
 }
 
-.hover-info:hover {
-    color: #0dcaf0 !important;
+.navbar-brand {
+    font-weight: 800;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: filter 0.3s ease;
+}
+
+    .navbar-brand:hover {
+        filter: brightness(1.2);
+    }
+
+.nav-link {
+    color: var(--text-muted) !important;
+    font-weight: 500;
+    position: relative;
+    padding: 0.5rem 1rem;
     transition: color 0.3s ease;
 }
 
-/* Akcenty dla kart gier (przydadzą się później) */
-.card-game {
-    background-color: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 8px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-    .card-game:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(13, 202, 240, 0.2);
-        border-color: #0dcaf0;
+    .nav-link:hover, .nav-link.active {
+        color: var(--accent-primary) !important;
     }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-    box-shadow: 0 0 0 0.1rem #121212, 0 0 0 0.25rem #0dcaf0;
+    /* Animowana linia pod linkiem w nawigacji */
+    .nav-link::after {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 2px;
+        bottom: 0;
+        left: 50%;
+        background-color: var(--accent-primary);
+        transition: all 0.3s ease;
+        transform: translateX(-50%);
+    }
+
+    .nav-link:hover::after {
+        width: 80%;
+        box-shadow: 0 0 8px var(--accent-primary);
+    }
+
+.glass-list .list-group-item {
+    background-color: transparent !important; /* Wymuszenie usunięcia białego tła z Bootstrapa */
+    transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
+    .glass-list .list-group-item:hover {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        transform: translateX(5px);
+        border-radius: 8px;
+    }
+/* ========= PRZYCISKI ========= */
+.btn-neon {
+    background-color: transparent;
+    color: var(--accent-primary);
+    border: 1px solid var(--accent-primary);
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.5rem 1.25rem;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+}
+
+    .btn-neon:hover {
+        background-color: var(--accent-primary);
+        color: var(--bg-base);
+        box-shadow: 0 0 15px var(--accent-primary-glow);
+        transform: translateY(-2px);
+    }
+
+.btn-glass {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+    .btn-glass:hover {
+        background-color: rgba(220, 53, 69, 0.1); /* Delikatny czerwony na hover dla wyloguj */
+        border-color: #dc3545;
+        color: #ff6b6b;
+    }
+
+/* ========= KARTY (Przygotowanie pod resztę aplikacji) ========= */
+.glass-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-glass);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    overflow: hidden;
+}
+
+    .glass-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+/* Fix fokusu dla inputów */
+.form-control:focus, .form-select:focus {
+    background-color: var(--bg-base);
+    color: var(--text-main);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 0.25rem var(--accent-primary-glow);
+}
+
+/* ========= STOPKA ========= */
 .footer {
     position: absolute;
     bottom: 0;
     width: 100%;
-    white-space: nowrap;
     line-height: 60px;
-    background-color: #1a1a1a;
+    background-color: transparent;
+    border-top: 1px solid var(--border-glass) !important;
 }
+
+    .footer a.text-info {
+        color: var(--accent-primary) !important;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+        .footer a.text-info:hover {
+            color: #ffffff !important;
+            text-shadow: 0 0 8px var(--accent-primary);
+        }
+
+/* Margines dla głównej zawartości ze względu na fixed-top navbar */
+.main-content {
+    padding-top: 100px;
+    min-height: calc(100vh - 60px);
+}
+
+

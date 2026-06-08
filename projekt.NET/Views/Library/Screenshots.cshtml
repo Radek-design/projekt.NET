@@ -4,66 +4,102 @@
 }
 
 <div class="container mt-4">
-    <h2 class="text-warning mb-4 border-bottom border-secondary pb-2"><i class="bi bi-images"></i> Twoja Galeria</h2>
-    <a asp-action="Index" class="btn btn-outline-secondary mb-4"><i class="bi bi-arrow-left"></i> Wróć do biblioteki</a>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-images" style="font-size: 2.5rem; color: var(--accent-primary);"></i>
+            <h1 class="display-6 fw-bold text-white m-0">Twoja Galeria</h1>
+        </div>
+        <a asp-action="Index" class="btn btn-glass d-flex align-items-center gap-2 align-self-start align-self-md-auto">
+            <i class="bi bi-arrow-left"></i> Wróć do biblioteki
+        </a>
+    </div>
 
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card bg-dark text-white border-info shadow-sm">
-                <div class="card-header bg-info text-dark fw-bold">Dodaj Zrzut Ekranu</div>
-                <div class="card-body">
-                    <form asp-action="AddScreenshot" method="post" enctype="multipart/form-data">
-                        <label class="small text-info fw-bold">Wybierz zrzut z dysku (.png, .jpg):</label>
-                        <input type="file" name="screenshotFile" accept="image/*" required class="form-control form-control-sm bg-dark text-white border-secondary mb-2" />
+    <div class="row g-4">
+        <div class="col-12 col-lg-4">
+            <div class="glass-sidebar p-4 rounded-4 position-sticky" style="top: 100px;">
+                <div class="d-flex align-items-center gap-2 mb-3 border-bottom border-glass pb-2">
+                    <i class="bi bi-cloud-upload text-info fs-4"></i>
+                    <h4 class="h5 m-0 fw-bold text-white">Dodaj Zrzut Ekranu</h4>
+                </div>
 
-                        <label class="small text-info fw-bold">Wybierz grę:</label>
-                        <select name="gameId" required class="form-select form-select-sm bg-dark text-white border-secondary mb-3">
+                <form asp-action="AddScreenshot" method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label small text-muted"><i class="bi bi-file-image"></i> Wybierz plik (.png, .jpg):</label>
+                        <input type="file" name="screenshotFile" accept="image/*" required class="form-control bg-dark text-white glass-input" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small text-muted"><i class="bi bi-controller"></i> Przypisz do gry:</label>
+                        <select name="gameId" required class="form-select bg-dark text-white glass-input">
                             @foreach (var g in ViewBag.Games)
                             {
                                 <option value="@g.Id">@g.Title</option>
                             }
                         </select>
-                        <button type="submit" class="btn btn-info btn-sm text-dark fw-bold w-100">Zapisz w galerii</button>
-                    </form>
-                </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-info w-100 fw-bold text-dark d-flex justify-content-center align-items-center gap-2 shadow-sm" style="border-radius: 8px;">
+                        <i class="bi bi-floppy"></i> Zapisz w galerii
+                    </button>
+                </form>
             </div>
         </div>
 
-        <div class="col-md-8">
-            <form method="get" asp-action="Screenshots" class="d-flex mb-3">
-                <select name="gameId" class="form-select form-select-sm bg-dark text-white border-secondary w-auto me-2" onchange="this.form.submit()">
-                    <option value="">-- Pokaż zrzuty ze wszystkich gier --</option>
-                    @foreach (var g in ViewBag.Games)
-                    {
-                        if (ViewBag.SelectedGame == g.Id)
-                        {
-                            <option value="@g.Id" selected>@g.Title</option>
-                        }
-                        else
-                        {
-                            <option value="@g.Id">@g.Title</option>
-                        }
-                    }
-                </select>
-                <noscript><button type="submit" class="btn btn-primary btn-sm">Filtruj</button></noscript>
-            </form>
+        <div class="col-12 col-lg-8">
+            <div class="glass-card p-3 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <span class="text-muted fw-bold d-none d-md-inline"><i class="bi bi-funnel"></i> Przeglądaj zrzuty:</span>
+                <form method="get" asp-action="Screenshots" class="m-0 w-100 w-md-auto">
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary text-info"><i class="bi bi-search"></i></span>
+                        <select name="gameId" class="form-select bg-dark text-white glass-input" onchange="this.form.submit()" style="min-width: 250px;">
+                            <option value="">-- Ze wszystkich gier --</option>
+                            @foreach (var g in ViewBag.Games)
+                            {
+                                if (ViewBag.SelectedGame == g.Id)
+                                {
+                                    <option value="@g.Id" selected>@g.Title</option>
+                                }
+                                else
+                                {
+                                    <option value="@g.Id">@g.Title</option>
+                                }
+                            }
+                        </select>
+                        <noscript><button type="submit" class="btn btn-primary">Filtruj</button></noscript>
+                    </div>
+                </form>
+            </div>
 
-            <div class="row">
-                @if (Model.Any())
+            <div class="row g-4">
+                @if (Model != null && Model.Any())
                 {
                     foreach (var s in Model)
                     {
-                        <div class="col-md-6 mb-3">
-                            <div class="card bg-dark border-secondary">
-                                <img src="@s.ImagePath" class="card-img-top" style="height:200px; object-fit:cover;">
-                                <div class="card-footer bg-transparent border-secondary text-center small text-light">Gra: @s.Game?.Title</div>
+                        <div class="col-12 col-sm-6 col-xl-6">
+                            <div class="glass-card h-100 d-flex flex-column overflow-hidden">
+                                <a href="@s.ImagePath" target="_blank" class="d-block overflow-hidden">
+                                    <img src="@s.ImagePath" class="w-100 border-bottom border-glass" alt="Zrzut ekranu"
+                                         style="height: 220px; object-fit: cover; transition: transform 0.3s ease;"
+                                         onmouseover="this.style.transform='scale(1.05)'"
+                                         onmouseout="this.style.transform='scale(1)'">
+                                </a>
+                                <div class="card-footer bg-transparent border-0 text-center py-3">
+                                    <span class="badge neon-badge w-100 p-2 text-wrap lh-base">
+                                        <i class="bi bi-joystick me-1"></i> @s.Game?.Title
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     }
                 }
                 else
                 {
-                    <div class="col-12"><div class="alert alert-secondary">Brak zrzutów ekranu spełniających kryteria.</div></div>
+                    <div class="col-12">
+                        <div class="alert glass-card text-muted d-flex align-items-center gap-3">
+                            <i class="bi bi-camera fs-4 text-info"></i>
+                            Brak zrzutów ekranu w Twojej galerii. Dodaj swój pierwszy zrzut!
+                        </div>
+                    </div>
                 }
             </div>
         </div>

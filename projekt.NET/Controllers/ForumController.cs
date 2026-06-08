@@ -21,39 +21,27 @@ namespace projekt.NET.Controllers
 
         public async Task<IActionResult> Index(string topicFilter)
         {
-            // Prawdziwe statystyki prosto z bazy danych
             ViewBag.UserCount = await _context.Users.CountAsync();
             ViewBag.PostCount = await _context.ForumPosts.CountAsync();
-
-            // Tematy do listy wyboru przy tworzeniu wpisu (pobieramy wszystkie gry)
             ViewBag.Games = await _context.Games.OrderBy(g => g.Title).ToListAsync();
             ViewBag.CurrentFilter = topicFilter;
 
             var query = _context.ForumPosts.Include(f => f.User).AsQueryable();
 
-            // Filtrowanie po wybranym temacie
-            if (!string.IsNullOrEmpty(topicFilter))
-            {
-                query = query.Where(p => p.Topic == topicFilter);
-            }
+            if (!string.IsNullOrEmpty(topicFilter)) query = query.Where(p => p.Topic == topicFilter);
 
             var allPosts = await query.OrderByDescending(p => p.CreatedAt).ToListAsync();
 
-            // LOGIKA WIDOCZNOŚCI POSTÓW:
             bool isMod = User.IsInRole("Moderator");
             var userId = _userManager.GetUserId(User);
 
             var visiblePosts = allPosts.Where(p =>
-                isMod ||                                         // Moderator widzi wszystko
-                p.IsApproved ||                                  // Wszyscy widzą zatwierdzone wpisy
-                p.IsDeletedByModerator ||                        // Wszyscy widzą powiadomienie o usunięciu
-                (!p.IsApproved && p.UserId == userId)            // Autor widzi swój własny post (jako oczekujący)
+                isMod || p.IsApproved || p.IsDeletedByModerator || (!p.IsApproved && p.UserId == userId)
             ).ToList();
 
             return View(visiblePosts);
         }
 
-        // AKCJA: Tworzenie wpisu przez użytkownika
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> CreatePost(string title, string content, string topic)
@@ -68,7 +56,7 @@ namespace projekt.NET.Controllers
                 Topic = topic,
                 UserId = user.Id,
                 CreatedAt = DateTime.Now,
-                IsApproved = false, // Wymaga Twoich wytycznych: DOMYŚLNIE CZEKA NA ZATWIERDZENIE
+                IsApproved = false,
                 IsDeletedByModerator = false
             };
 
@@ -79,64 +67,75 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Index");
         }
 
-        // AKCJA MODERATORA: Zatwierdzanie wpisu
         [HttpPost]
         [Authorize(Roles = "Moderator")]
         public async Task<IActionResult> ApprovePost(int id)
         {
             var post = await _context.ForumPosts.FindAsync(id);
-            if (post != null)
-            {
-                post.IsApproved = true;
-                await _context.SaveChangesAsync();
-                TempData["ForumMsg"] = "Wpis został pomyślnie zatwierdzony i jest teraz widoczny publicznie.";
-            }
+            if (post != null) { post.IsApproved = true; await _context.SaveChangesAsync(); TempData["ForumMsg"] = "Wpis zatwierdzony publicznie."; }
             return RedirectToAction("Index");
         }
 
-        // AKCJA MODERATORA: Usuwanie wpisu (Oflagowanie)
         [HttpPost]
         [Authorize(Roles = "Moderator")]
         public async Task<IActionResult> DeletePost(int id)
         {
             var post = await _context.ForumPosts.FindAsync(id);
-            if (post != null)
-            {
-                post.IsDeletedByModerator = true;
-                await _context.SaveChangesAsync();
-                TempData["ForumMsg"] = "Wpis został usunięty (ukryty dla użytkowników).";
-            }
+            if (post != null) { post.IsDeletedByModerator = true; await _context.SaveChangesAsync(); TempData["ForumMsg"] = "Wpis oznaczony jako usunięty."; }
             return RedirectToAction("Index");
         }
 
-        [HttpPost]
-        [Authorize]
-        public async Task<IActionResult> AddComment(int postId, string content)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            var comment = new ForumComment
-            {
-                ForumPostId = postId,
-                Content = content,
-                UserId = user.Id,
-                CreatedAt = DateTime.Now
-            };
+        // --- NOWE FUNKCJE DLA KOMENTARZY ---
 
-            _context.ForumComments.Add(comment);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Details", new { id = postId }); // Musisz stworzyć akcję Details
-        }
-
+        // 1. Podstrona szczegółów dyskusji z komentarzami
         public async Task<IActionResult> Details(int id)
         {
             var post = await _context.ForumPosts
                 .Include(f => f.User)
                 .Include(f => f.Comments)
-                .ThenInclude(c => c.User)
+                    .ThenInclude(c => c.User) // Wczytuje autorów poszczególnych komentarzy
                 .FirstOrDefaultAsync(f => f.Id == id);
 
+            if (post == null) return NotFound();
+
             return View(post);
+        }
+
+        // 2. Dodawanie komentarza (automatyczna akceptacja)
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddComment(int postId, string content)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user != null && !string.IsNullOrWhiteSpace(content))
+            {
+                var comment = new ForumComment
+                {
+                    ForumPostId = postId,
+                    Content = content,
+                    UserId = user.Id,
+                    CreatedAt = DateTime.Now
+                };
+                _context.ForumComments.Add(comment);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMsg"] = "Komentarz został opublikowany.";
+            }
+            return RedirectToAction("Details", new { id = postId });
+        }
+
+        // 3. Usuwanie komentarza przez Moderatora
+        [HttpPost]
+        [Authorize(Roles = "Moderator")]
+        public async Task<IActionResult> DeleteComment(int commentId, int postId)
+        {
+            var comment = await _context.ForumComments.FindAsync(commentId);
+            if (comment != null)
+            {
+                _context.ForumComments.Remove(comment);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMsg"] = "Komentarz został usunięty.";
+            }
+            return RedirectToAction("Details", new { id = postId });
         }
     }
 }

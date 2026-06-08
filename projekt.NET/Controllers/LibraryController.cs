@@ -9,6 +9,8 @@ using System.Security.Claims;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using Microsoft.AspNetCore.Hosting; // Wymagane do plików
+using System.IO; // Wymagane do plików
 
 namespace projekt.NET.Controllers
 {
@@ -17,11 +19,13 @@ namespace projekt.NET.Controllers
     {
         private readonly AppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IWebHostEnvironment _webHostEnvironment; // Pozwala pobrać ścieżkę do wwwroot
 
-        public LibraryController(AppDbContext context, UserManager<ApplicationUser> userManager)
+        public LibraryController(AppDbContext context, UserManager<ApplicationUser> userManager, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
             _userManager = userManager;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         public async Task<IActionResult> Index(int? genreId)
@@ -45,7 +49,6 @@ namespace projekt.NET.Controllers
             ViewBag.SelectedGenre = genreId;
             ViewBag.ProfilePicture = user.ProfilePictureUrl;
 
-            // Statystyki - Oceny wyciągamy teraz tylko z RECENZJI użytkownika
             var userReviews = await _context.Reviews.Where(r => r.UserId == user.Id).ToListAsync();
 
             ViewBag.TotalGames = myGames.Count;
@@ -56,19 +59,36 @@ namespace projekt.NET.Controllers
             return View(myGames);
         }
 
+        // ZMIANA: Obsługa fizycznego pliku awatara
         [HttpPost]
-        public async Task<IActionResult> UpdateProfilePicture(string avatarUrl)
+        public async Task<IActionResult> UpdateProfilePicture(IFormFile avatarFile)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user != null && !string.IsNullOrEmpty(avatarUrl))
+            if (user != null && avatarFile != null && avatarFile.Length > 0)
             {
-                user.ProfilePictureUrl = avatarUrl;
+                // 1. Ustal ścieżkę do folderu zapisu w wwwroot/uploads/avatars
+                string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "avatars");
+
+                // 2. Jeśli folder nie istnieje, stwórz go
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                // 3. Stwórz unikalną nazwę pliku, żeby użytkownicy nie nadpisywali sobie zdjęć nawzajem
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(avatarFile.FileName);
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                // 4. Skopiuj plik na serwer
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await avatarFile.CopyToAsync(fileStream);
+                }
+
+                // 5. Zapisz ścieżkę w profilu użytkownika
+                user.ProfilePictureUrl = "/uploads/avatars/" + uniqueFileName;
                 await _userManager.UpdateAsync(user);
             }
             return RedirectToAction("Index");
         }
 
-        // Usunięto parametr i logikę zapisywania Ratingu!
         [HttpPost]
         public IActionResult AddGame(int gameId, string status, int? playTimeHours)
         {
@@ -83,7 +103,7 @@ namespace projekt.NET.Controllers
                 UserId = userId,
                 GameId = gameId,
                 Status = status ?? "Planuje",
-                Rating = null, // Ocena tylko z poziomu recenzji
+                Rating = null,
                 PlayTimeHours = playTimeHours ?? 0
             };
 
@@ -92,7 +112,6 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Index");
         }
 
-        // Usunięto edycję Ratingu
         [HttpPost]
         public async Task<IActionResult> EditGame(int gameId, string status, int playTimeHours)
         {
@@ -108,14 +127,13 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Index");
         }
 
-        // GENEROWANIE RAPORTU DO PLIKU PDF
         public async Task<IActionResult> GenerateReport()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByIdAsync(userId); // Pobieramy nazwę gracza
             var games = await _context.UserGames.Include(ug => ug.Game).Where(ug => ug.UserId == userId).ToListAsync();
             var reviews = await _context.Reviews.Include(r => r.Game).Where(r => r.UserId == userId).ToListAsync();
 
-            // Konfiguracja darmowej licencji QuestPDF
             QuestPDF.Settings.License = LicenseType.Community;
 
             var document = Document.Create(container =>
@@ -123,51 +141,128 @@ namespace projekt.NET.Controllers
                 container.Page(page =>
                 {
                     page.Size(PageSizes.A4);
-                    page.Margin(2, Unit.Centimetre);
+                    page.Margin(0); // Zerujemy główny margines, aby nagłówek był na całą szerokość
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(11));
+                    page.DefaultTextStyle(x => x.FontSize(11).FontFamily(Fonts.Arial));
 
-                    page.Header().Text("Moj Raport Biblioteki Gier")
-                        .SemiBold().FontSize(20).FontColor(Colors.Blue.Darken3);
-
-                    page.Content().PaddingVertical(1, Unit.Centimetre).Column(x =>
-                    {
-                        x.Spacing(10);
-
-                        // Podsumowanie
-                        x.Item().Text("Podsumowanie Profilu:").SemiBold().FontSize(14);
-                        x.Item().Text($"Liczba gier: {games.Count} | Laczny czas gry: {games.Sum(g => g.PlayTimeHours)} h");
-
-                        // Lista Gier
-                        x.Item().PaddingTop(10).Text("Gry w Twojej Bibliotece:").SemiBold().FontSize(14);
-                        foreach (var g in games)
+                    // ================= HEADER (Nagłówek) =================
+                    page.Header()
+                        .Background(Colors.Blue.Darken3)
+                        .PaddingVertical(20)
+                        .PaddingHorizontal(30)
+                        .Row(row =>
                         {
-                            x.Item().Text($"- Tytul: {g.Game.Title} | Status: {g.Status} | Czas gry: {g.PlayTimeHours}h");
+                            row.RelativeItem().Column(col =>
+                            {
+                                col.Item().Text("Kolekcja Gier").FontSize(26).FontColor(Colors.White).SemiBold();
+                                col.Item().Text($"Użytkownik: {user?.UserName ?? "Gracz"}").FontSize(14).FontColor(Colors.Blue.Lighten4);
+                            });
+
+                            row.AutoItem().AlignRight().Column(col =>
+                            {
+                                col.Item().Text($"Wygenerowano:").FontSize(10).FontColor(Colors.White).AlignRight();
+                                col.Item().Text($"{DateTime.Now:dd.MM.yyyy HH:mm}").FontSize(12).FontColor(Colors.White).SemiBold().AlignRight();
+                            });
+                        });
+
+                    // ================= ZAWARTOŚĆ =================
+                    page.Content().Padding(30).Column(x =>
+                    {
+                        x.Spacing(20); // Odstępy między głównymi sekcjami
+
+                        // 1. Podsumowanie statystyk w szarej ramce
+                        x.Item().Background(Colors.Grey.Lighten4).BorderLeft(5).BorderColor(Colors.Blue.Darken2).Padding(15).Column(c =>
+                        {
+                            c.Spacing(5);
+                            c.Item().Text("Szybkie statystyki").FontSize(16).SemiBold().FontColor(Colors.Blue.Darken2);
+                            c.Item().Text($"Całkowita liczba gier w bibliotece: {games.Count}").FontSize(12);
+                            c.Item().Text($"Łączny czas spędzony w grach: {games.Sum(g => g.PlayTimeHours)} godzin").FontSize(12);
+                        });
+
+                        // 2. Tabela Gier
+                        x.Item().Text("Szczegóły Biblioteki").FontSize(18).SemiBold().FontColor(Colors.Black);
+
+                        if (games.Any())
+                        {
+                            x.Item().Table(table =>
+                            {
+                                // Definicja szerokości kolumn
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.ConstantColumn(30);  // Lp.
+                                    columns.RelativeColumn(3);   // Tytuł
+                                    columns.RelativeColumn(2);   // Status
+                                    columns.ConstantColumn(80);  // Czas (h)
+                                });
+
+                                // Nagłówek Tabeli
+                                table.Header(header =>
+                                {
+                                    header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("#").SemiBold();
+                                    header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Tytuł Gry").SemiBold();
+                                    header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Obecny Status").SemiBold();
+                                    header.Cell().Background(Colors.Grey.Lighten2).Padding(5).AlignCenter().Text("Czas (h)").SemiBold();
+                                });
+
+                                // Wypełnianie tabeli grami
+                                int lp = 1;
+                                foreach (var g in games)
+                                {
+                                    // Obramowanie pod każdym wierszem
+                                    table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(lp.ToString());
+                                    table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(g.Game.Title).SemiBold();
+                                    table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(g.Status);
+                                    table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(5).AlignCenter().Text(g.PlayTimeHours.ToString());
+                                    lp++;
+                                }
+                            });
+                        }
+                        else
+                        {
+                            x.Item().Text("Brak gier w bibliotece.").Italic().FontColor(Colors.Grey.Medium);
                         }
 
-                        // Recenzje
-                        x.Item().PaddingTop(15).Text("Napisane Recenzje:").SemiBold().FontSize(14);
+                        // 3. Elegancka sekcja napisanych recenzji
+                        x.Item().PaddingTop(15).Text("Napisane Recenzje").FontSize(18).SemiBold().FontColor(Colors.Black);
+
                         if (reviews.Any())
                         {
                             foreach (var r in reviews)
                             {
-                                x.Item().PaddingBottom(5).Column(rc =>
+                                // Recenzje jako stylizowane karty
+                                x.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(10).Column(rc =>
                                 {
-                                    rc.Item().Text($"Gra: {r.Game.Title} (Ocena: {r.Rating}/10)").SemiBold();
-                                    rc.Item().Text($"\"{r.Content}\"").Italic();
+                                    rc.Item().Row(r_row => {
+                                        r_row.RelativeItem().Text(r.Game.Title).FontSize(13).SemiBold();
+                                        r_row.AutoItem().Text($"Ocena: {r.Rating}/10").SemiBold().FontColor(Colors.Orange.Darken2);
+                                    });
+                                    rc.Item().PaddingTop(5).Text($"\"{r.Content}\"").Italic().FontColor(Colors.Grey.Darken3);
+                                    rc.Item().PaddingTop(5).Text($"Napisano: {r.CreatedAt:dd.MM.yyyy}").FontSize(9).FontColor(Colors.Grey.Medium);
                                 });
                             }
                         }
                         else
                         {
-                            x.Item().Text("Brak napisanych recenzji.");
+                            x.Item().Text("Brak napisanych recenzji.").Italic().FontColor(Colors.Grey.Medium);
                         }
                     });
+
+                    // ================= FOOTER (Stopka z numerami stron) =================
+                    page.Footer()
+                        .PaddingVertical(10)
+                        .AlignCenter()
+                        .Text(x =>
+                        {
+                            x.Span("Strona ").FontColor(Colors.Grey.Medium).FontSize(10);
+                            x.CurrentPageNumber().FontColor(Colors.Grey.Medium).FontSize(10);
+                            x.Span(" z ").FontColor(Colors.Grey.Medium).FontSize(10);
+                            x.TotalPages().FontColor(Colors.Grey.Medium).FontSize(10);
+                        });
                 });
             });
 
             byte[] pdfBytes = document.GeneratePdf();
-            return File(pdfBytes, "application/pdf", "Raport_Biblioteki_Gier.pdf");
+            return File(pdfBytes, "application/pdf", $"Raport_{user?.UserName ?? "Gier"}.pdf");
         }
 
         public async Task<IActionResult> MyReviews()
@@ -190,13 +285,34 @@ namespace projekt.NET.Controllers
             return View(await query.OrderByDescending(s => s.CreatedAt).ToListAsync());
         }
 
+        // ZMIANA: Obsługa fizycznego zrzutu ekranu z dysku
         [HttpPost]
-        public async Task<IActionResult> AddScreenshot(string imagePath, int gameId)
+        public async Task<IActionResult> AddScreenshot(IFormFile screenshotFile, int gameId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId != null && !string.IsNullOrEmpty(imagePath))
+
+            if (userId != null && screenshotFile != null && screenshotFile.Length > 0)
             {
-                var screenshot = new Screenshot { UserId = userId, GameId = gameId, ImagePath = imagePath, CreatedAt = DateTime.Now };
+                // Zapisujemy screeny w wwwroot/uploads/screenshots
+                string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "screenshots");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(screenshotFile.FileName);
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await screenshotFile.CopyToAsync(fileStream);
+                }
+
+                var screenshot = new Screenshot
+                {
+                    UserId = userId,
+                    GameId = gameId,
+                    ImagePath = "/uploads/screenshots/" + uniqueFileName, // Zapis ścieżki do bazy
+                    CreatedAt = DateTime.Now
+                };
+
                 _context.Screenshots.Add(screenshot);
                 await _context.SaveChangesAsync();
             }

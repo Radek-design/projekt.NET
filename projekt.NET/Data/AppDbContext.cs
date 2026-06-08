@@ -81,10 +81,16 @@ namespace projekt.NET.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<ForumComment>()
-            .HasOne(fc => fc.ForumPost)
-            .WithMany(fp => fp.Comments) // Musisz dodać kolekcję w ForumPost.cs
-            .HasForeignKey(fc => fc.ForumPostId)
-            .OnDelete(DeleteBehavior.Cascade);
+                .HasOne(fc => fc.ForumPost)
+                .WithMany(fp => fp.Comments)
+                .HasForeignKey(fc => fc.ForumPostId)
+                .OnDelete(DeleteBehavior.NoAction); // Usunięcie wpisu usunie wszystkie jego komentarze
+
+            modelBuilder.Entity<ForumComment>()
+                .HasOne(fc => fc.User)
+                .WithMany()
+                .HasForeignKey(fc => fc.UserId)
+                .OnDelete(DeleteBehavior.NoAction); // Zapobiega błędom kaskadowym
         }
     }
 }

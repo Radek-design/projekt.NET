@@ -656,13 +656,13 @@ namespace projekt.NET.Migrations
                     b.HasOne("projekt.NET.Models.ForumPost", "ForumPost")
                         .WithMany("Comments")
                         .HasForeignKey("ForumPostId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("projekt.NET.Models.Entities.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("ForumPost");

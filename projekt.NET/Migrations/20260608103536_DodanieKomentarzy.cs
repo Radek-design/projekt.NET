@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace projekt.NET.Migrations
 {
     /// <inheritdoc />
-    public partial class AddForumComments : Migration
+    public partial class DodanieKomentarzy : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -29,14 +29,12 @@ namespace projekt.NET.Migrations
                         name: "FK_ForumComments_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ForumComments_ForumPosts_ForumPostId",
                         column: x => x.ForumPostId,
                         principalTable: "ForumPosts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(

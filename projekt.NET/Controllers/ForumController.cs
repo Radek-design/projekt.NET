@@ -1,7 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using projekt.NET.Data;
 using projekt.NET.Models;
 using projekt.NET.Models.Entities;
@@ -12,11 +19,13 @@ namespace projekt.NET.Controllers
     {
         private readonly AppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ForumController(AppDbContext context, UserManager<ApplicationUser> userManager)
+        public ForumController(AppDbContext context, UserManager<ApplicationUser> userManager, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
             _userManager = userManager;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         public async Task<IActionResult> Index(string topicFilter)
@@ -44,16 +53,37 @@ namespace projekt.NET.Controllers
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> CreatePost(string title, string content, string topic)
+        // Zmiana: usunięto znak '?' przy IFormFile, brak tego znaku jest bezpieczniejszy dla kompilatora
+        public async Task<IActionResult> CreatePost(string title, string content, string topic, IFormFile imageFile)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
+
+            string uploadedImagePath = null;
+
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                // Zapisujemy pliki do folderu wwwroot/uploads/forum
+                string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "forum");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(imageFile.FileName);
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await imageFile.CopyToAsync(fileStream);
+                }
+
+                uploadedImagePath = "/uploads/forum/" + uniqueFileName;
+            }
 
             var post = new ForumPost
             {
                 Title = title,
                 Content = content,
                 Topic = topic,
+                ImagePath = uploadedImagePath, // Zapis ścieżki
                 UserId = user.Id,
                 CreatedAt = DateTime.Now,
                 IsApproved = false,
@@ -85,15 +115,12 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Index");
         }
 
-        // --- NOWE FUNKCJE DLA KOMENTARZY ---
-
-        // 1. Podstrona szczegółów dyskusji z komentarzami
         public async Task<IActionResult> Details(int id)
         {
             var post = await _context.ForumPosts
                 .Include(f => f.User)
                 .Include(f => f.Comments)
-                    .ThenInclude(c => c.User) // Wczytuje autorów poszczególnych komentarzy
+                    .ThenInclude(c => c.User)
                 .FirstOrDefaultAsync(f => f.Id == id);
 
             if (post == null) return NotFound();
@@ -101,7 +128,6 @@ namespace projekt.NET.Controllers
             return View(post);
         }
 
-        // 2. Dodawanie komentarza (automatyczna akceptacja)
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> AddComment(int postId, string content)
@@ -123,7 +149,6 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Details", new { id = postId });
         }
 
-        // 3. Usuwanie komentarza przez Moderatora
         [HttpPost]
         [Authorize(Roles = "Moderator")]
         public async Task<IActionResult> DeleteComment(int commentId, int postId)

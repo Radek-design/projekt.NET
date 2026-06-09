@@ -27,6 +27,7 @@
 
                 <div class="collapse navbar-collapse" id="navbarMainContent">
                     <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-1 gap-lg-3">
+
                         <li class="nav-item">
                             <a class="nav-link d-flex align-items-center gap-2" asp-area="" asp-controller="Home" asp-action="Index">
                                 <i class="bi bi-house-door"></i> Strona główna
@@ -37,11 +38,19 @@
                                 <i class="bi bi-grid"></i> Katalog Gier
                             </a>
                         </li>
+
                         <li class="nav-item">
                             <a class="nav-link d-flex align-items-center gap-2" asp-area="" asp-controller="Library" asp-action="Index">
                                 <i class="bi bi-collection-play"></i> Moja biblioteka
                             </a>
                         </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center gap-2" asp-area="" asp-controller="Library" asp-action="CommunityScreenshots">
+                                <i class="bi bi-images"></i> Galeria
+                            </a>
+                        </li>
+
                         <li class="nav-item">
                             <a class="nav-link d-flex align-items-center gap-2" asp-area="" asp-controller="Forum" asp-action="Index">
                                 <i class="bi bi-chat-square-text"></i> Forum

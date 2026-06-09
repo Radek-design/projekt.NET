@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting; // <-- DODANE (do IWebHostEnvironment)
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -58,7 +59,12 @@ namespace projekt.NET.Tests
             var httpContext = new DefaultHttpContext { User = user };
             var tempData = new TempDataDictionary(httpContext, Mock.Of<ITempDataProvider>());
 
-            return new ForumController(dbContext, userManagerMock.Object)
+            // ZMIANA: Tworzymy sztuczne (Mock) środowisko serwera dla testów
+            var mockEnvironment = new Mock<IWebHostEnvironment>();
+            mockEnvironment.Setup(m => m.WebRootPath).Returns("wwwroot_test");
+
+            // ZMIANA: Przekazujemy mockEnvironment.Object jako trzeci parametr
+            return new ForumController(dbContext, userManagerMock.Object, mockEnvironment.Object)
             {
                 ControllerContext = new ControllerContext { HttpContext = httpContext },
                 TempData = tempData
@@ -70,12 +76,10 @@ namespace projekt.NET.Tests
         {
             var db = GetInMemoryDbContext();
 
-            // NAPRAWA: Tworzymy fikcyjnych użytkowników, aby EF Core przepuścił posty przez INNER JOIN
             var user1 = new ApplicationUser { Id = "otherUser", UserName = "Inny User" };
             var user2 = new ApplicationUser { Id = "myUser", UserName = "Ja" };
             db.Users.AddRange(user1, user2);
 
-            // Dodajemy posty przypisane do tych użytkowników
             db.ForumPosts.AddRange(
                 new ForumPost { Id = 1, Title = "Zatw", Content = "C", Topic = "T", UserId = "otherUser", User = user1, IsApproved = true },
                 new ForumPost { Id = 2, Title = "Cudzy", Content = "C", Topic = "T", UserId = "otherUser", User = user1, IsApproved = false },
@@ -92,7 +96,7 @@ namespace projekt.NET.Tests
             var model = result?.Model as IEnumerable<ForumPost>;
 
             Assert.NotNull(model);
-            Assert.Equal(2, model.Count()); // Teraz model zwróci równe 2 wpisy!
+            Assert.Equal(2, model.Count());
             Assert.DoesNotContain(model, p => p.Title == "Cudzy");
         }
 
@@ -106,7 +110,8 @@ namespace projekt.NET.Tests
 
             var controller = GetController(db, userManagerMock);
 
-            var result = await controller.CreatePost("Testowy tytuł", "Treść posta", "Gry") as RedirectToActionResult;
+            // ZMIANA: Przekazujemy "null" jako czwarty parametr (brak pliku graficznego w tym teście)
+            var result = await controller.CreatePost("Testowy tytuł", "Treść posta", "Gry", null) as RedirectToActionResult;
 
             Assert.NotNull(result);
             Assert.Equal("Index", result.ActionName);
@@ -120,7 +125,7 @@ namespace projekt.NET.Tests
             var db = GetInMemoryDbContext();
             var post = new ForumPost { Id = 1, Title = "Do akceptacji", Content = "C", Topic = "T", UserId = "u", IsApproved = false };
             db.ForumPosts.Add(post);
-            await db.SaveChangesAsync(); // Błąd nr 89 wyeliminowany
+            await db.SaveChangesAsync();
 
             var userManagerMock = GetMockUserManager();
             var controller = GetController(db, userManagerMock, role: "Moderator");

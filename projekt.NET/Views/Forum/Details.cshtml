@@ -15,10 +15,18 @@
     <div class="card bg-dark text-white border-info mb-5 shadow">
         <div class="card-header bg-info text-dark d-flex justify-content-between align-items-center fw-bold">
             <span class="fs-4">@Model.Title</span>
+
             <span class="badge bg-dark border border-secondary">Temat: @Model.Topic</span>
         </div>
         <div class="card-body p-4">
             <p class="fs-5" style="white-space: pre-wrap; line-height: 1.6;">@Model.Content</p>
+
+            @if (!string.IsNullOrEmpty(Model.ImagePath))
+            {
+                <div class="mt-4 text-center">
+                    <img src="@Model.ImagePath" alt="Załączony zrzut ekranu" class="img-fluid rounded shadow" style="max-height: 500px; object-fit: contain;" />
+                </div>
+            }
         </div>
         <div class="card-footer bg-transparent border-info text-muted d-flex justify-content-between">
             <span>Rozpoczęte przez: <strong class="text-light">@Model.User?.UserName</strong></span>
@@ -37,22 +45,33 @@
                     <div class="card bg-dark text-white border-secondary mb-3 shadow-sm">
                         <div class="card-body">
                             <div class="d-flex justify-content-between mb-2 border-bottom border-secondary pb-2">
-                                <span class="text-info fw-bold"><i class="bi bi-person-circle"></i> @comment.User?.UserName</span>
+
+                                <span>
+                                    <i class="bi bi-person text-info me-1"></i>
+                                    <a asp-controller="Library" asp-action="CommunityScreenshots" asp-route-authorId="@comment.UserId" class="text-warning text-decoration-none fw-bold" title="Zobacz galerię użytkownika">
+                                        @comment.User?.UserName
+                                    </a>
+                                </span>
                                 <span class="small text-muted">@comment.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
                             </div>
+
                             <p class="mb-0" style="white-space: pre-wrap;">@comment.Content</p>
                         </div>
 
                         @if (User.IsInRole("Moderator"))
                         {
+
                             <div class="card-footer bg-transparent border-secondary text-end p-1">
                                 <form asp-action="DeleteComment" method="post" class="m-0" onsubmit="return confirm('Czy na pewno usunąć ten komentarz?');">
+
                                     <input type="hidden" name="commentId" value="@comment.Id" />
                                     <input type="hidden" name="postId" value="@Model.Id" />
                                     <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i> Usuń komentarz (Mod)</button>
+
                                 </form>
                             </div>
                         }
+
                     </div>
                 }
             }
@@ -66,13 +85,16 @@
             @if (User.Identity != null && User.Identity.IsAuthenticated)
             {
                 <div class="card bg-dark text-white border-success shadow-sm sticky-top" style="top: 20px;">
+
                     <div class="card-header bg-success text-dark fw-bold">Napisz odpowiedź</div>
                     <div class="card-body">
                         <form asp-action="AddComment" method="post">
                             <input type="hidden" name="postId" value="@Model.Id" />
+
                             <textarea name="content" required rows="4" class="form-control form-control-sm bg-dark text-white border-secondary mb-3" placeholder="Twoja odpowiedź..."></textarea>
                             <button type="submit" class="btn btn-success btn-sm w-100 text-dark fw-bold">Opublikuj komentarz</button>
                         </form>
+
                     </div>
                 </div>
             }
@@ -80,6 +102,7 @@
             {
                 <div class="alert alert-warning shadow-sm">Zaloguj się, aby móc odpowiadać w tym wątku.</div>
             }
+
 
             <a asp-action="Index" class="btn btn-outline-secondary w-100 mt-3"><i class="bi bi-arrow-left"></i> Powrót na Forum</a>
         </div>

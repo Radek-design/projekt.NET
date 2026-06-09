@@ -40,26 +40,43 @@
                 <h4 class="h5 m-0 fw-bold text-warning">Narzędzia Moderatora: Dodaj Nową Grę do Katalogu</h4>
             </div>
 
+            <div class="row mb-4 bg-dark p-3 rounded border border-info">
+                <div class="col-md-8">
+                    <label class="form-label small text-info fw-bold">Pobierz dane automatycznie z RAWG (Opcjonalne)</label>
+                    <input type="text" id="rawgSearch" class="form-control bg-dark text-white glass-input border-info" placeholder="Wpisz tytuł np. Cyberpunk 2077..." />
+                </div>
+                <div class="col-md-4 d-flex align-items-end mt-3 mt-md-0">
+                    <button type="button" id="rawgBtn" class="btn btn-info w-100 fw-bold text-dark" onclick="importFromRawg()">
+                        <i class="bi bi-cloud-download"></i> Pobierz z RAWG
+                    </button>
+                </div>
+                <div class="col-12 mt-2">
+                    <div id="rawgAlert" class="alert d-none mb-0 p-2 text-center small"></div>
+                </div>
+            </div>
+
             <form asp-controller="Games" asp-action="Create" method="post" class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label small text-warning fw-medium">Tytuł Gry</label>
-                    <input type="text" name="title" class="form-control bg-dark text-white glass-input" required placeholder="Wpisz pełny tytuł..." />
+                    <input type="text" name="title" id="gameTitle" class="form-control bg-dark text-white glass-input" required placeholder="Wpisz pełny tytuł..." />
                 </div>
                 <div class="col-md-6">
                     <label class="form-label small text-warning fw-medium">Data Premiery</label>
-                    <input type="date" name="releaseDate" class="form-control bg-dark text-white glass-input" required />
+                    <input type="date" name="releaseDate" id="gameReleaseDate" class="form-control bg-dark text-white glass-input" required />
                 </div>
                 <div class="col-md-12">
                     <label class="form-label small text-warning fw-medium">Krótki opis</label>
-                    <textarea name="description" class="form-control bg-dark text-white glass-input" rows="2" placeholder="O czym jest ta gra..."></textarea>
+                    <textarea name="description" id="gameDescription" class="form-control bg-dark text-white glass-input" rows="2" placeholder="O czym jest ta gra..."></textarea>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label small text-warning fw-medium">Link do okładki (URL)</label>
-                    <input type="url" name="coverImagePath" class="form-control bg-dark text-white glass-input" placeholder="https://..." />
+                    <label class="form-label small text-warning fw-medium">Link do okładki (URL z RAWG lub internetu)</label>
+                    <input type="url" name="coverImagePath" id="gameCoverImagePath" class="form-control bg-dark text-white glass-input" placeholder="https://..." />
                 </div>
+
                 <div class="col-md-6">
                     <label class="form-label small text-warning fw-medium">Wydawca (Producent)</label>
-                    <select name="producerId" class="form-select bg-dark text-white glass-input" required>
+                    <select name="producerId" class="form-select bg-dark text-white glass-input mb-2">
+                        <option value="">-- Wybierz z bazy... --</option>
                         @if (ViewBag.Producers != null)
                         {
                             foreach (var producer in ViewBag.Producers)
@@ -68,10 +85,12 @@
                             }
                         }
                     </select>
+                    <input type="text" name="newProducerName" class="form-control bg-dark text-white glass-input border-info" placeholder="LUB wpisz nowego (doda się do bazy)" />
                 </div>
+
                 <div class="col-md-6">
-                    <label class="form-label small text-warning fw-medium">Platformy (Trzymaj CTRL)</label>
-                    <select name="selectedPlatforms" class="form-select bg-dark text-white glass-input" multiple style="height: 100px;">
+                    <label class="form-label small text-warning fw-medium">Platformy</label>
+                    <select name="selectedPlatforms" id="gamePlatforms" class="form-select bg-dark text-white glass-input mb-2" multiple style="height: 80px;">
                         @if (ViewBag.Platforms != null)
                         {
                             foreach (var platform in ViewBag.Platforms)
@@ -80,10 +99,12 @@
                             }
                         }
                     </select>
+                    <input type="text" name="newPlatforms" id="gamePlatformsNew" class="form-control bg-dark text-white glass-input border-info" placeholder="LUB wpisz nowe (np. PC, PS5)..." />
                 </div>
+
                 <div class="col-md-6">
-                    <label class="form-label small text-warning fw-medium">Gatunki (Trzymaj CTRL)</label>
-                    <select name="selectedGenres" class="form-select bg-dark text-white glass-input" multiple style="height: 100px;">
+                    <label class="form-label small text-warning fw-medium">Gatunki</label>
+                    <select name="selectedGenres" id="gameGenres" class="form-select bg-dark text-white glass-input mb-2" multiple style="height: 80px;">
                         @if (ViewBag.Genres != null)
                         {
                             foreach (var genre in ViewBag.Genres)
@@ -92,9 +113,11 @@
                             }
                         }
                     </select>
+                    <input type="text" name="newGenres" id="gameGenresNew" class="form-control bg-dark text-white glass-input border-info" placeholder="LUB wpisz nowe (np. RPG, Akcja)..." />
                 </div>
+
                 <div class="col-12 text-end mt-4">
-                    <button type="submit" class="btn btn-warning fw-bold px-5 py-2 shadow-sm">
+                    <button type="submit" class="btn btn-warning fw-bold px-5 py-2 shadow-sm text-dark">
                         <i class="bi bi-floppy-fill me-2"></i> Zapisz grę w bazie
                     </button>
                 </div>
@@ -228,7 +251,6 @@
 @section Scripts {
     <script>
         function toggleFields(selectElement) {
-            // Skrypt ignoruje wszystkie inne gry na stronie - szuka tylko w obrębie modyfikowanego elementu 'form'
             var form = selectElement.closest('.library-form');
             var extraFields = form.querySelector('.extra-fields');
 
@@ -236,6 +258,59 @@
                 extraFields.style.display = "block";
             } else {
                 extraFields.style.display = "none";
+            }
+        }
+
+        async function importFromRawg() {
+            const query = document.getElementById('rawgSearch').value;
+            if (!query) {
+                alert("Wpisz tytuł gry do wyszukania!");
+                return;
+            }
+
+            const btn = document.getElementById('rawgBtn');
+            const alertBox = document.getElementById('rawgAlert');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Szukam...';
+            alertBox.classList.add('d-none');
+
+            try {
+                const response = await fetch(`/Games/ImportFromRawg?name=${encodeURIComponent(query)}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    document.getElementById('gameTitle').value = data.title || '';
+                    if (data.releaseDate) document.getElementById('gameReleaseDate').value = data.releaseDate.split('T')[0];
+                    if (data.coverUrl) document.getElementById('gameCoverImagePath').value = data.coverUrl;
+                    if (data.rating) document.getElementById('gameDescription').value = `Ogólna ocena graczy RAWG: ${data.rating}/5.\n\n`;
+
+                    // ZMIANA: Skrypt wstawia surowy tekst po przecinku do nowych pól.
+                    // Backend się zajmie przypisaniem ich do bazy!
+                    if (data.genres && data.genres.length > 0) {
+                        document.getElementById('gameGenresNew').value = data.genres.join(', ');
+                    }
+                    if (data.platforms && data.platforms.length > 0) {
+                        document.getElementById('gamePlatformsNew').value = data.platforms.join(', ');
+                    }
+
+                    alertBox.innerText = `Pobrano dane dla: ${data.title}`;
+                    alertBox.classList.remove('d-none', 'alert-danger');
+                    alertBox.classList.add('alert-success', 'text-success');
+                } else {
+                    alertBox.innerText = 'Nie znaleziono takiej gry w bazie RAWG. Sprawdź pisownię.';
+                    alertBox.classList.remove('d-none', 'alert-success');
+                    alertBox.classList.add('alert-danger', 'text-danger');
+                }
+            } catch (err) {
+                console.error(err);
+                alertBox.innerText = 'Błąd komunikacji z serwerem.';
+                alertBox.classList.remove('d-none', 'alert-success');
+                alertBox.classList.add('alert-danger', 'text-danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-cloud-download"></i> Pobierz z RAWG';
             }
         }
     </script>

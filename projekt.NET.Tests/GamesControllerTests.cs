@@ -101,7 +101,7 @@ namespace projekt.NET.Tests
 
             var controller = GetControllerWithContext(db, role: "Moderator");
 
-            var result = controller.Create("cyberpunk 2077", DateTime.Now, "img", "desc", 1, null, null) as RedirectToActionResult;
+            var result = controller.Create("cyberpunk 2077", DateTime.Now, "img", "desc", 1, null, null, null, null, null) as RedirectToActionResult;
 
             Assert.NotNull(result);
             Assert.Equal("Index", result.ActionName);
@@ -114,7 +114,7 @@ namespace projekt.NET.Tests
             var db = GetInMemoryDbContext();
             var controller = GetControllerWithContext(db, role: "Moderator");
 
-            var result = controller.Create("Wiedźmin 3", DateTime.Now, "img.jpg", "Opis", 1, null, null) as RedirectToActionResult;
+            var result = controller.Create("Wiedźmin 3", DateTime.Now, "img.jpg", "Opis", 1, null, null, null, null, null) as RedirectToActionResult;
 
             Assert.NotNull(result);
             Assert.Equal("Index", result.ActionName);

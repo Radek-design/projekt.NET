@@ -5,6 +5,7 @@ using projekt.NET.Data;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using projekt.NET.Models;
+using projekt.NET.Services; // POTRZEBNE DO RAWG
 
 namespace projekt.NET.Controllers
 {
@@ -47,9 +48,12 @@ namespace projekt.NET.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Moderator")]
-        public IActionResult Create(string title, DateTime releaseDate, string coverImagePath, string description, int producerId, int[] selectedPlatforms, int[] selectedGenres)
+        public IActionResult Create(
+            string title, DateTime releaseDate, string coverImagePath, string description,
+            int? producerId, string? newProducerName,
+            int[]? selectedPlatforms, string? newPlatforms,
+            int[]? selectedGenres, string? newGenres)
         {
-            // ZABEZPIECZENIE: Sprawdza czy gra (bez zwracania uwagi na wielkość liter) już istnieje!
             bool gameExists = _context.Games.Any(g => g.Title.ToLower() == title.ToLower());
             if (gameExists)
             {
@@ -63,10 +67,32 @@ namespace projekt.NET.Controllers
                 ReleaseDate = releaseDate,
                 CoverImagePath = coverImagePath,
                 Description = description,
-                ProducerId = producerId,
                 AverageRating = 0
             };
 
+            // 1. OBSŁUGA PRODUCENTA (z listy LUB nowego)
+            if (!string.IsNullOrWhiteSpace(newProducerName))
+            {
+                var producer = _context.Producers.FirstOrDefault(p => p.Name.ToLower() == newProducerName.ToLower().Trim());
+                if (producer == null)
+                {
+                    producer = new Producer { Name = newProducerName.Trim(), Country = "Nieznany" };
+                    _context.Producers.Add(producer);
+                    _context.SaveChanges(); // Zapisujemy żeby wygenerowało mu ID
+                }
+                newGame.ProducerId = producer.Id;
+            }
+            else if (producerId.HasValue && producerId > 0)
+            {
+                newGame.ProducerId = producerId.Value;
+            }
+            else
+            {
+                TempData["ErrorMsg"] = "Musisz wybrać producenta z listy lub wpisać nowego!";
+                return RedirectToAction("Index");
+            }
+
+            // 2. OBSŁUGA PLATFORM
             if (selectedPlatforms != null)
             {
                 foreach (var pId in selectedPlatforms)
@@ -75,13 +101,42 @@ namespace projekt.NET.Controllers
                     if (platform != null) newGame.Platforms.Add(platform);
                 }
             }
+            if (!string.IsNullOrWhiteSpace(newPlatforms))
+            {
+                var platformNames = newPlatforms.Split(',').Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p));
+                foreach (var pName in platformNames)
+                {
+                    var platform = _context.Platforms.FirstOrDefault(p => p.Name.ToLower() == pName.ToLower());
+                    if (platform == null)
+                    {
+                        platform = new Platform { Name = pName };
+                        _context.Platforms.Add(platform); // Automatyczne dodanie do bazy
+                    }
+                    if (!newGame.Platforms.Contains(platform)) newGame.Platforms.Add(platform);
+                }
+            }
 
+            // 3. OBSŁUGA GATUNKÓW
             if (selectedGenres != null)
             {
                 foreach (var gId in selectedGenres)
                 {
                     var genre = _context.Genres.Find(gId);
                     if (genre != null) newGame.Genres.Add(genre);
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(newGenres))
+            {
+                var genreNames = newGenres.Split(',').Select(g => g.Trim()).Where(g => !string.IsNullOrEmpty(g));
+                foreach (var gName in genreNames)
+                {
+                    var genre = _context.Genres.FirstOrDefault(g => g.Name.ToLower() == gName.ToLower());
+                    if (genre == null)
+                    {
+                        genre = new Genre { Name = gName };
+                        _context.Genres.Add(genre); // Automatyczne dodanie do bazy
+                    }
+                    if (!newGame.Genres.Contains(genre)) newGame.Genres.Add(genre);
                 }
             }
 
@@ -166,12 +221,8 @@ namespace projekt.NET.Controllers
             if (game != null)
             {
                 var title = game.Title;
-
-                // Usunięcie gry (dzięki relacjom w bazie, Entity Framework automatycznie 
-                // usunie też przypisane do niej recenzje i usunie ją z bibliotek graczy)
                 _context.Games.Remove(game);
                 _context.SaveChanges();
-
                 TempData["SuccessMsg"] = $"Gra '{title}' oraz wszystkie powiązane z nią dane zostały pomyślnie usunięte z bazy.";
             }
             else
@@ -180,6 +231,30 @@ namespace projekt.NET.Controllers
             }
 
             return RedirectToAction("Index");
+        }
+
+        // ============================================
+        // NOWE: Funkcja komunikująca się z RAWG przez AJAX
+        // ============================================
+        [HttpGet]
+        [Authorize(Roles = "Moderator")]
+        public async Task<IActionResult> ImportFromRawg(string name, [FromServices] RawgService rawgService)
+        {
+            if (string.IsNullOrEmpty(name)) return BadRequest();
+
+            var result = await rawgService.SearchGameAsync(name);
+            if (result == null) return NotFound();
+
+            // Zwracamy dane jako JSON do formularza na froncie
+            return Json(new
+            {
+                title = result.Name,
+                releaseDate = result.Released,
+                coverUrl = result.Background_Image,
+                rating = result.Rating,
+                platforms = result.Platforms?.Select(p => p.Platform?.Name),
+                genres = result.Genres?.Select(g => g.Name)
+            });
         }
     }
 }

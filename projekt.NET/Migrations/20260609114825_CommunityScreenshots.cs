@@ -5,24 +5,25 @@
 namespace projekt.NET.Migrations
 {
     /// <inheritdoc />
-    public partial class LogoProfil : Migration
+    public partial class CommunityScreenshots : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
-                name: "ProfilePictureUrl",
-                table: "AspNetUsers",
-                type: "nvarchar(max)",
-                nullable: true);
+                name: "ImagePath",
+                table: "ForumPosts",
+                type: "longtext",
+                nullable: false)
+                .Annotation("MySql:CharSet", "utf8mb4");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "ProfilePictureUrl",
-                table: "AspNetUsers");
+                name: "ImagePath",
+                table: "ForumPosts");
         }
     }
 }

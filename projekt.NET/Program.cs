@@ -14,17 +14,17 @@ builder.Services.AddHttpClient<RawgService>();
 
 
 // === REPOZYTORIA ===
-// Scoped = nowa instancja na ka�de ��danie HTTP
 builder.Services.AddScoped<IGameRepository, GameRepository>();
 builder.Services.AddScoped<IProducerRepository, ProducerRepository>();
 builder.Services.AddScoped<IPlatformRepository, PlatformRepository>();
 builder.Services.AddScoped<IGenreRepository, GenreRepository>();
 
-//BAZA DANYCH
-// ��czymy aplikacj� z SQL Server przez connection string z appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString)
+    ));
 
 //IDENTITY (logowanie i role)
 // Konfigurujemy system logowania - u�ytkownik to ApplicationUser, role to IdentityRole

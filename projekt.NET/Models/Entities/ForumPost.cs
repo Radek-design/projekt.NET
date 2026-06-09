@@ -15,7 +15,7 @@ namespace projekt.NET.Models
 
         // Temat: "Dyskusja ogólna", "Problemy techniczne" lub nazwa/id gry
         public string Topic { get; set; } = string.Empty;
-
+        public string ImagePath { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // System moderacji

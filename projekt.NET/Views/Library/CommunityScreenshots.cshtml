@@ -1,0 +1,93 @@
+﻿@model IEnumerable<projekt.NET.Models.Screenshot>
+
+@{
+    ViewData["Title"] = "Galeria Społeczności";
+}
+
+<div class="container mt-4">
+
+    @if (ViewBag.AuthorName != null)
+    {
+        <h2 class="mb-4 text-white">
+            <i class="bi bi-person-bounding-box text-info"></i> Galeria gracza: <span class="text-warning">@ViewBag.AuthorName</span>
+            <a asp-action="CommunityScreenshots" class="btn btn-outline-info btn-sm ms-3" style="border-radius: 8px;">Wróć do wszystkich zdjęć</a>
+        </h2>
+    }
+    else
+    {
+        <h2 class="mb-4 text-white"><i class="bi bi-images text-info"></i> Galeria Zrzutów Ekranu Społeczności</h2>
+    }
+
+    <form method="get" asp-action="CommunityScreenshots" class="mb-4 glass-card p-3">
+        @if (!string.IsNullOrEmpty(ViewBag.SelectedAuthor as string))
+        {
+            <input type="hidden" name="authorId" value="@ViewBag.SelectedAuthor" />
+        }
+
+        <div class="row align-items-end">
+            <div class="col-md-4">
+                <label for="gameId" class="form-label text-warning fw-bold">Filtruj według gry:</label>
+                <select id="gameId" name="gameId" class="form-select bg-dark text-white glass-input border-secondary" onchange="this.form.submit()">
+                    <option value="">-- Wszystkie gry --</option>
+                    @foreach (var game in ViewBag.Games)
+                    {
+                        if (ViewBag.SelectedGame != null && ViewBag.SelectedGame == game.Id)
+                        {
+                            <option value="@game.Id" selected="selected">@game.Title</option>
+                        }
+                        else
+                        {
+                            <option value="@game.Id">@game.Title</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 mt-2 mt-md-0">
+                <button type="submit" class="btn btn-info w-100 fw-bold">Filtruj</button>
+            </div>
+            @if (ViewBag.SelectedGame != null || ViewBag.SelectedAuthor != null)
+            {
+                <div class="col-md-2 mt-2 mt-md-0">
+                    <a asp-action="CommunityScreenshots" class="btn btn-outline-secondary w-100">Wyczyść filtry</a>
+                </div>
+            }
+        </div>
+    </form>
+
+    <div class="row g-4">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var item in Model)
+            {
+                <div class="col-md-4">
+                    <div class="glass-card h-100 d-flex flex-column overflow-hidden">
+                        <a href="@item.ImagePath" target="_blank" class="d-block overflow-hidden">
+                            <img src="@item.ImagePath" class="w-100 border-bottom border-glass" alt="Zrzut z gry @(item.Game?.Title)"
+                                 style="height: 250px; object-fit: cover; transition: transform 0.3s ease;"
+                                 onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        </a>
+                        <div class="card-body p-3">
+                            <h5 class="h6 text-white fw-bold mb-2">@item.Game?.Title</h5>
+                            <p class="card-text text-muted small mb-0">
+                                <i class="bi bi-person-fill text-info"></i> Autor:
+
+                                <a asp-action="CommunityScreenshots" asp-route-authorId="@item.UserId"
+                                   class="text-warning text-decoration-none fw-bold hover-info" title="Zobacz wszystkie zrzuty tego gracza">
+                                    @(item.User?.UserName ?? "Nieznany")
+                                </a>
+                                <br />
+                                <i class="bi bi-clock mt-1"></i> Dodano: @item.CreatedAt.ToString("dd.MM.yyyy HH:mm")
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="alert glass-card text-muted">Ten użytkownik (lub społeczność) nie dodał jeszcze żadnych zrzutów ekranu.</div>
+            </div>
+        }
+    </div>
+</div>

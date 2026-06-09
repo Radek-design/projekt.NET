@@ -21,6 +21,7 @@ namespace projekt.NET.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IWebHostEnvironment _webHostEnvironment;
 
+        // Wstrzykuję bazę, usermanagera i środowisko żeby móc zapisywać pliki
         public ForumController(AppDbContext context, UserManager<ApplicationUser> userManager, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
@@ -28,6 +29,7 @@ namespace projekt.NET.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
+        // Akcja wyświetlająca listę postów, z opcją filtrowania po temacie
         public async Task<IActionResult> Index(string topicFilter)
         {
             ViewBag.UserCount = await _context.Users.CountAsync();
@@ -41,9 +43,11 @@ namespace projekt.NET.Controllers
 
             var allPosts = await query.OrderByDescending(p => p.CreatedAt).ToListAsync();
 
+            // Sprawdzam kim jest zalogowany człowiek, żeby wiedzieć co mu pokazać
             bool isMod = User.IsInRole("Moderator");
             var userId = _userManager.GetUserId(User);
 
+            // Filtruję posty: mod widzi wszystko, zwykły user widzi zatwierdzone oraz swoje oczekujące
             var visiblePosts = allPosts.Where(p =>
                 isMod || p.IsApproved || p.IsDeletedByModerator || (!p.IsApproved && p.UserId == userId)
             ).ToList();
@@ -53,7 +57,8 @@ namespace projekt.NET.Controllers
 
         [HttpPost]
         [Authorize]
-        // Zmiana: usunięto znak '?' przy IFormFile, brak tego znaku jest bezpieczniejszy dla kompilatora
+
+        // Dodawanie nowego posta
         public async Task<IActionResult> CreatePost(string title, string content, string topic, IFormFile imageFile)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -61,15 +66,18 @@ namespace projekt.NET.Controllers
 
             string uploadedImagePath = null;
 
+            // Sprawdzam, czy user wrzucił jakiś obrazek do posta
             if (imageFile != null && imageFile.Length > 0)
             {
                 // Zapisujemy pliki do folderu wwwroot/uploads/forum
                 string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "forum");
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
+                // Tworzę unikalną nazwę pliku, żeby nic się nie nadpisało
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(imageFile.FileName);
                 string filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
+                // Zapisuję ten plik fizycznie na dysku serwera
                 using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
                     await imageFile.CopyToAsync(fileStream);
@@ -78,6 +86,7 @@ namespace projekt.NET.Controllers
                 uploadedImagePath = "/uploads/forum/" + uniqueFileName;
             }
 
+            // Składa w całość obiekt posta
             var post = new ForumPost
             {
                 Title = title,
@@ -90,6 +99,7 @@ namespace projekt.NET.Controllers
                 IsDeletedByModerator = false
             };
 
+            // Wrzuca do bazy i zapisuję
             _context.ForumPosts.Add(post);
             await _context.SaveChangesAsync();
 
@@ -97,6 +107,7 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Index");
         }
 
+        // Oznacza post jako zatwierdzony (tylko dla modów)
         [HttpPost]
         [Authorize(Roles = "Moderator")]
         public async Task<IActionResult> ApprovePost(int id)
@@ -106,6 +117,7 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Index");
         }
 
+        // Usuwanie posta (też tylko dla modów, tzw. soft delete)
         [HttpPost]
         [Authorize(Roles = "Moderator")]
         public async Task<IActionResult> DeletePost(int id)
@@ -115,12 +127,13 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Index");
         }
 
+        // Szczegóły posta - wczytuje post razem z autorem i wszystkimi komentarzami
         public async Task<IActionResult> Details(int id)
         {
             var post = await _context.ForumPosts
                 .Include(f => f.User)
                 .Include(f => f.Comments)
-                    .ThenInclude(c => c.User)
+                    .ThenInclude(c => c.User) // dociąga autorów poszczególnych komentarzy
                 .FirstOrDefaultAsync(f => f.Id == id);
 
             if (post == null) return NotFound();
@@ -128,6 +141,7 @@ namespace projekt.NET.Controllers
             return View(post);
         }
 
+        // Dodawanie komentarza do konkretnego wpisu
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> AddComment(int postId, string content)
@@ -135,6 +149,7 @@ namespace projekt.NET.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user != null && !string.IsNullOrWhiteSpace(content))
             {
+                // Tworzy komentarz i podpina mu ID zalogowanego usera oraz ID posta
                 var comment = new ForumComment
                 {
                     ForumPostId = postId,
@@ -149,6 +164,7 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Details", new { id = postId });
         }
 
+        // Usuwanie czyjegoś komentarza (dla modów)
         [HttpPost]
         [Authorize(Roles = "Moderator")]
         public async Task<IActionResult> DeleteComment(int commentId, int postId)

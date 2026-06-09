@@ -14,6 +14,7 @@ using System.IO;
 
 namespace projekt.NET.Controllers
 {
+    // Tylko Zalogowani użytkownicy
     [Authorize]
     public class LibraryController : Controller
     {
@@ -28,16 +29,19 @@ namespace projekt.NET.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
+        // Główny panel Biblioteki Gier konkretnego gracza
         public async Task<IActionResult> Index(int? genreId)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
+            // Z bazy przypisane gry (relację) do tego usera
             var query = _context.UserGames
                 .Include(ug => ug.Game)
                 .ThenInclude(g => g.Genres)
                 .Where(ug => ug.UserId == user.Id);
 
+            // Filtracja po gatunku
             if (genreId.HasValue && genreId > 0)
             {
                 query = query.Where(ug => ug.Game.Genres.Any(g => g.Id == genreId));
@@ -45,12 +49,14 @@ namespace projekt.NET.Controllers
 
             var myGames = await query.ToListAsync();
 
+            // Wysyłanie pakietów pomocniczych do widoku
             ViewBag.Genres = await _context.Genres.OrderBy(g => g.Name).ToListAsync();
             ViewBag.SelectedGenre = genreId;
             ViewBag.ProfilePicture = user.ProfilePictureUrl;
 
             var userReviews = await _context.Reviews.Where(r => r.UserId == user.Id).ToListAsync();
 
+            // Obliczenia na piechotę dla szybkiego dashboardu
             ViewBag.TotalGames = myGames.Count;
             ViewBag.TotalTime = myGames.Sum(ug => ug.PlayTimeHours);
             ViewBag.HighestRating = userReviews.Any() ? userReviews.Max(r => r.Rating) : 0;
@@ -59,10 +65,12 @@ namespace projekt.NET.Controllers
             return View(myGames);
         }
 
+        // Zmiana fotki profilowej usera
         [HttpPost]
         public async Task<IActionResult> UpdateProfilePicture(IFormFile avatarFile)
         {
             var user = await _userManager.GetUserAsync(User);
+            // Sprawdza, wysłany jakiś plik z obrazkiem
             if (user != null && avatarFile != null && avatarFile.Length > 0)
             {
                 string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "avatars");
@@ -71,6 +79,7 @@ namespace projekt.NET.Controllers
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(avatarFile.FileName);
                 string filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
+                // Fizyczne wgranie pliku do katalogu avatars
                 using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
                     await avatarFile.CopyToAsync(fileStream);
@@ -82,10 +91,13 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Index");
         }
 
+        // Zapisanie wybranej gry do "mojej biblioteki"
         [HttpPost]
         public IActionResult AddGame(int gameId, string status, int? playTimeHours)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Zabezpieczenie przed wrzuceniem dwa razy tego samego
             var alreadyExists = _context.UserGames.Any(ug => ug.UserId == userId && ug.GameId == gameId);
             if (alreadyExists) return RedirectToAction("Index");
 
@@ -105,6 +117,7 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Index");
         }
 
+        // Edycja czasu gry i zmiany statusu dla gry już posiadanej
         [HttpPost]
         public async Task<IActionResult> EditGame(int gameId, string status, int playTimeHours)
         {
@@ -120,13 +133,17 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Index");
         }
 
+        // Generowanie raportu z biblioteki i recenzji do pliku PDF używając QuestPDF
         public async Task<IActionResult> GenerateReport()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var user = await _userManager.FindByIdAsync(userId);
+
+            // Wyciąganie wszystkiego, co potrzebne do dokumentu
             var games = await _context.UserGames.Include(ug => ug.Game).Where(ug => ug.UserId == userId).ToListAsync();
             var reviews = await _context.Reviews.Include(r => r.Game).Where(r => r.UserId == userId).ToListAsync();
 
+            // Ustawia darmową licencję z biblioteki
             QuestPDF.Settings.License = LicenseType.Community;
 
             var document = Document.Create(container =>
@@ -247,6 +264,7 @@ namespace projekt.NET.Controllers
             return File(pdfBytes, "application/pdf", $"Raport_{user?.UserName ?? "Gier"}.pdf");
         }
 
+        // Zakładka z samymi recenzjami usera
         public async Task<IActionResult> MyReviews()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -254,6 +272,7 @@ namespace projekt.NET.Controllers
             return View(reviews);
         }
 
+        // Widok z własnymi screenami
         public async Task<IActionResult> Screenshots(int? gameId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -267,6 +286,7 @@ namespace projekt.NET.Controllers
             return View(await query.OrderByDescending(s => s.CreatedAt).ToListAsync());
         }
 
+        // Ogólna strona ze zrzutami od całej społeczności (dostępne dla każdego)
         [AllowAnonymous]
         public async Task<IActionResult> CommunityScreenshots(int? gameId, string? authorId)
         {
@@ -281,7 +301,7 @@ namespace projekt.NET.Controllers
                 query = query.Where(s => s.GameId == gameId);
             }
 
-            // NOWE: Filtrowanie po konkretnym użytkowniku (autorze)
+            // Filtrowanie po konkretnym użytkowniku (autorze)
             if (!string.IsNullOrEmpty(authorId))
             {
                 query = query.Where(s => s.UserId == authorId);
@@ -298,6 +318,7 @@ namespace projekt.NET.Controllers
             return View(screenshots);
         }
 
+        // Formularz wrzucenia screenshota
         [HttpPost]
         public async Task<IActionResult> AddScreenshot(IFormFile screenshotFile, int gameId)
         {

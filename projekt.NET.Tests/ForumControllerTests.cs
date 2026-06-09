@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting; // <-- DODANE (do IWebHostEnvironment)
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +22,7 @@ namespace projekt.NET.Tests
 {
     public class ForumControllerTests
     {
+        // Stawia sztuczną bazę w pamięci RAM do każdego testu
         private AppDbContext GetInMemoryDbContext()
         {
             var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -32,6 +33,7 @@ namespace projekt.NET.Tests
             return db;
         }
 
+        // Generuje fałszywego menedżera kont bez prawdziwej bazy, na potrzeby testów
         private Mock<UserManager<ApplicationUser>> GetMockUserManager()
         {
             var store = new Mock<IUserStore<ApplicationUser>>();
@@ -48,8 +50,10 @@ namespace projekt.NET.Tests
                 store.Object, options.Object, hasher.Object, userValidators, passValidators, normalizer.Object, errors.Object, services.Object, logger.Object);
         }
 
+        // Pomocnicza metoda montująca kontroler z wklejonym fałszywym kontekstem HTTP (zalogowanym użytkownikiem)
         private ForumController GetController(AppDbContext dbContext, Mock<UserManager<ApplicationUser>> userManagerMock, string role = "User", string userId = "user1")
         {
+            // Niby-użytkownik z określonym ID i rolą
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
             {
                 new Claim(ClaimTypes.NameIdentifier, userId),
@@ -59,11 +63,10 @@ namespace projekt.NET.Tests
             var httpContext = new DefaultHttpContext { User = user };
             var tempData = new TempDataDictionary(httpContext, Mock.Of<ITempDataProvider>());
 
-            // ZMIANA: Tworzymy sztuczne (Mock) środowisko serwera dla testów
+            // Fałszywe środowisko, które zwraca testową ścieżkę dla wwwroot
             var mockEnvironment = new Mock<IWebHostEnvironment>();
             mockEnvironment.Setup(m => m.WebRootPath).Returns("wwwroot_test");
 
-            // ZMIANA: Przekazujemy mockEnvironment.Object jako trzeci parametr
             return new ForumController(dbContext, userManagerMock.Object, mockEnvironment.Object)
             {
                 ControllerContext = new ControllerContext { HttpContext = httpContext },
@@ -71,11 +74,13 @@ namespace projekt.NET.Tests
             };
         }
 
+        // Test sprawdzający, czy metoda Index zwraca tylko zatwierdzone posty lub te należące do zalogowanego użytkownika
         [Fact]
         public async Task Index_ReturnsOnlyApprovedOrUserOwnedPosts()
         {
             var db = GetInMemoryDbContext();
 
+            // Dodajemy dwóch użytkowników i kilka postów - zatwierdzonych, niezatwierdzonych, należących do różnych użytkowników
             var user1 = new ApplicationUser { Id = "otherUser", UserName = "Inny User" };
             var user2 = new ApplicationUser { Id = "myUser", UserName = "Ja" };
             db.Users.AddRange(user1, user2);
@@ -100,17 +105,18 @@ namespace projekt.NET.Tests
             Assert.DoesNotContain(model, p => p.Title == "Cudzy");
         }
 
+        // Test sprawdzający, czy metoda CreatePost dodaje nowy post do bazy z IsApproved ustawionym na false
         [Fact]
         public async Task CreatePost_AddsUnapprovedPostToDatabase()
         {
+            // Przygotowujemy bazę, menedżera użytkowników i kontroler
             var db = GetInMemoryDbContext();
             var userManagerMock = GetMockUserManager();
             userManagerMock.Setup(u => u.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
                            .ReturnsAsync(new ApplicationUser { Id = "user1", UserName = "TestUser" });
 
             var controller = GetController(db, userManagerMock);
-
-            // ZMIANA: Przekazujemy "null" jako czwarty parametr (brak pliku graficznego w tym teście)
+            // Wywołujemy metodę CreatePost i sprawdzamy, czy post został dodany do bazy z IsApproved = false
             var result = await controller.CreatePost("Testowy tytuł", "Treść posta", "Gry", null) as RedirectToActionResult;
 
             Assert.NotNull(result);
@@ -119,17 +125,21 @@ namespace projekt.NET.Tests
             Assert.False(db.ForumPosts.First().IsApproved);
         }
 
+        // Test sprawdzający, czy metoda ApprovePost ustawia IsApproved na true dla moderatora
         [Fact]
         public async Task ApprovePost_AsModerator_SetsIsApprovedToTrue()
         {
+            // Przygotowujemy bazę z jednym niezatwierdzonym postem
             var db = GetInMemoryDbContext();
             var post = new ForumPost { Id = 1, Title = "Do akceptacji", Content = "C", Topic = "T", UserId = "u", IsApproved = false };
             db.ForumPosts.Add(post);
             await db.SaveChangesAsync();
 
+            // Przygotowujemy menedżera użytkowników i kontroler z rolą moderatora
             var userManagerMock = GetMockUserManager();
             var controller = GetController(db, userManagerMock, role: "Moderator");
 
+            // Wywołujemy metodę ApprovePost i sprawdzamy, czy post został zatwierdzony
             var result = await controller.ApprovePost(1) as RedirectToActionResult;
 
             Assert.NotNull(result);
@@ -137,19 +147,23 @@ namespace projekt.NET.Tests
             Assert.True(approvedPost.IsApproved);
         }
 
+        // Test sprawdzający, czy metoda AddComment dodaje komentarz do bazy i przypisuje go do odpowiedniego posta
         [Fact]
         public async Task AddComment_SavesCommentToDatabase()
         {
+            // Przygotowujemy bazę z jednym zatwierdzonym postem
             var db = GetInMemoryDbContext();
             db.ForumPosts.Add(new ForumPost { Id = 1, Title = "Test Post", Content = "C", Topic = "T", UserId = "u", IsApproved = true, Comments = new List<ForumComment>() });
             await db.SaveChangesAsync();
 
+            // Przygotowujemy menedżera użytkowników i kontroler z zalogowanym użytkownikiem
             var userManagerMock = GetMockUserManager();
             userManagerMock.Setup(u => u.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
                            .ReturnsAsync(new ApplicationUser { Id = "user1" });
 
             var controller = GetController(db, userManagerMock);
 
+            // Wywołujemy metodę AddComment i sprawdzamy, czy komentarz został dodany do bazy i przypisany do posta
             var result = await controller.AddComment(1, "Świetny wpis!") as RedirectToActionResult;
 
             Assert.NotNull(result);

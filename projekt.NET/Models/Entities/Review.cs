@@ -14,7 +14,7 @@ namespace projekt.NET.Models
         public int Rating { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        // Relacja z grą (zakładając, że masz model Game lub UserGame)
+        // Relacja z grą
         public int GameId { get; set; }
         public Game? Game { get; set; }
 

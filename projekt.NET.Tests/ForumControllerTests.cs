@@ -97,7 +97,7 @@ namespace projekt.NET.Tests
 
             var controller = GetController(db, userManagerMock, role: "User", userId: "myUser");
 
-            var result = await controller.Index(null) as ViewResult;
+            var result = await controller.Index(null, null) as ViewResult;
             var model = result?.Model as IEnumerable<ForumPost>;
 
             Assert.NotNull(model);

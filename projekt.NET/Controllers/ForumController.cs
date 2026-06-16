@@ -30,24 +30,42 @@ namespace projekt.NET.Controllers
         }
 
         // Akcja wyświetlająca listę postów, z opcją filtrowania po temacie
-        public async Task<IActionResult> Index(string topicFilter)
+        public async Task<IActionResult> Index(string topicFilter, string searchString)
         {
             ViewBag.UserCount = await _context.Users.CountAsync();
             ViewBag.PostCount = await _context.ForumPosts.CountAsync();
             ViewBag.Games = await _context.Games.OrderBy(g => g.Title).ToListAsync();
             ViewBag.CurrentFilter = topicFilter;
+            ViewBag.CurrentSearch = searchString; // Przekazujemy do widoku
 
-            var query = _context.ForumPosts.Include(f => f.User).AsQueryable();
+            IQueryable<ForumPost> query;
 
-            if (!string.IsNullOrEmpty(topicFilter)) query = query.Where(p => p.Topic == topicFilter);
+            // --- ZMIANA OSOBA 1: Wyszukiwanie FULL-TEXT SEARCH ---
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                // Używamy zparametryzowanego zapytania SQL, aby bezbłędnie użyć indeksu na dwóch kolumnach naraz
+                query = _context.ForumPosts
+                    .FromSqlRaw("SELECT * FROM ForumPosts WHERE MATCH(Title, Content) AGAINST({0})", searchString);
+            }
+            else
+            {
+                query = _context.ForumPosts.AsQueryable();
+            }
+            // -----------------------------------------------------
+
+            // EF Core bez problemu potrafi doklejać do FromSqlRaw kolejne warunki i Includes
+            query = query.Include(f => f.User);
+
+            if (!string.IsNullOrEmpty(topicFilter))
+            {
+                query = query.Where(p => p.Topic == topicFilter);
+            }
 
             var allPosts = await query.OrderByDescending(p => p.CreatedAt).ToListAsync();
 
-            // Sprawdzam kim jest zalogowany człowiek, żeby wiedzieć co mu pokazać
             bool isMod = User.IsInRole("Moderator");
             var userId = _userManager.GetUserId(User);
 
-            // Filtruję posty: mod widzi wszystko, zwykły user widzi zatwierdzone oraz swoje oczekujące
             var visiblePosts = allPosts.Where(p =>
                 isMod || p.IsApproved || p.IsDeletedByModerator || (!p.IsApproved && p.UserId == userId)
             ).ToList();

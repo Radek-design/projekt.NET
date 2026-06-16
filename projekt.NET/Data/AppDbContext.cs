@@ -24,6 +24,7 @@ namespace projekt.NET.Data
         public DbSet<Screenshot> Screenshots { get; set; } = null!;
         public DbSet<Premiere> Premieres { get; set; } = null!;
         public DbSet<ForumComment> ForumComments { get; set; } = null!;
+        public DbSet<GameStatistics> GameStatistics { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -91,6 +92,10 @@ namespace projekt.NET.Data
                 .WithMany()
                 .HasForeignKey(fc => fc.UserId)
                 .OnDelete(DeleteBehavior.NoAction); // Zapobiega błędom kaskadowym
+
+            modelBuilder.Entity<GameStatistics>()
+                .ToView("vw_GameStatistics")
+                .HasNoKey();
         }
     }
 }

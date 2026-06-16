@@ -182,7 +182,6 @@ namespace projekt.NET.Controllers
         [Authorize]
         public IActionResult AddReview(int gameId, int rating, string content)
         {
-            // Pobiera z ciasteczek ID obecnie zalogowanego usera
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Challenge();
 
@@ -198,13 +197,10 @@ namespace projekt.NET.Controllers
             _context.Reviews.Add(review);
             _context.SaveChanges();
 
-            // Po dodaniu recenzji przelicza i zapisuje nową średnią dla gry
-            var game = _context.Games.Include(g => g.Reviews).FirstOrDefault(g => g.Id == gameId);
-            if (game != null)
-            {
-                game.AverageRating = game.Reviews.Any() ? game.Reviews.Average(r => r.Rating) : 0;
-                _context.SaveChanges();
-            }
+            // --- ZMIANA OSOBA 1: Wywołanie procedury składowanej ---
+            // Zamiast ręcznie wyliczać średnią, zlecamy to bazie danych.
+            _context.Database.ExecuteSqlRaw("CALL sp_UpdateGameAverageRating({0})", gameId);
+            // --------------------------------------------------------
 
             return RedirectToAction("Details", new { id = gameId });
         }
@@ -220,13 +216,10 @@ namespace projekt.NET.Controllers
                 _context.Reviews.Remove(review);
                 _context.SaveChanges();
 
-                // Odświeża średnią po usunięciu recenzji
-                var game = _context.Games.Include(g => g.Reviews).FirstOrDefault(g => g.Id == gameId);
-                if (game != null)
-                {
-                    game.AverageRating = game.Reviews.Any() ? game.Reviews.Average(r => r.Rating) : 0;
-                    _context.SaveChanges();
-                }
+                // --- ZMIANA OSOBA 1: Wywołanie procedury składowanej ---
+                // Aktualizujemy średnią ocen po usunięciu recenzji
+                _context.Database.ExecuteSqlRaw("CALL sp_UpdateGameAverageRating({0})", gameId);
+                // --------------------------------------------------------
             }
             return RedirectToAction("Details", new { id = gameId });
         }

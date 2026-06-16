@@ -5,7 +5,7 @@ using projekt.NET.Data;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using projekt.NET.Models;
-using projekt.NET.Services; // POTRZEBNE DO RAWG
+using projekt.NET.Services;
 
 namespace projekt.NET.Controllers
 {
@@ -18,19 +18,22 @@ namespace projekt.NET.Controllers
             _context = context;
         }
 
+        // Pokazuje główną listę gier
         public IActionResult Index(int? genreId)
         {
+            // Dociąga do gier od razu producentów, gatunki i recenzje żeby nie robić osobnych zapytań
             var gamesQuery = _context.Games
                 .Include(g => g.Producer)
                 .Include(g => g.Genres)
                 .Include(g => g.Reviews)
                 .AsQueryable();
 
+            // Filtrowanie po gatunku (jeśli user coś kliknął z boku)
             if (genreId.HasValue && genreId > 0)
             {
                 gamesQuery = gamesQuery.Where(g => g.Genres.Any(genre => genre.Id == genreId));
             }
-
+            // Pakuje listy słownikowe do ViewBaga dla filtrów w widoku
             ViewBag.Genres = _context.Genres.OrderBy(g => g.Name).ToList();
             ViewBag.Platforms = _context.Platforms.OrderBy(p => p.Name).ToList();
             ViewBag.Producers = _context.Producers.OrderBy(p => p.Name).ToList();
@@ -38,6 +41,7 @@ namespace projekt.NET.Controllers
 
             var gamesList = gamesQuery.ToList();
 
+            // Na piechote liczy średnią z recenzji dla każdej gry
             foreach (var game in gamesList)
             {
                 game.AverageRating = game.Reviews.Any() ? game.Reviews.Average(r => r.Rating) : 0;
@@ -46,6 +50,7 @@ namespace projekt.NET.Controllers
             return View(gamesList);
         }
 
+        // Mega kombajn do dodawania gier (tylko dla moderacji)
         [HttpPost]
         [Authorize(Roles = "Moderator")]
         public IActionResult Create(
@@ -54,6 +59,7 @@ namespace projekt.NET.Controllers
             int[]? selectedPlatforms, string? newPlatforms,
             int[]? selectedGenres, string? newGenres)
         {
+            // Blokuje dodanie tej samej gry drugi raz (sprawdza po tytule)
             bool gameExists = _context.Games.Any(g => g.Title.ToLower() == title.ToLower());
             if (gameExists)
             {
@@ -76,12 +82,14 @@ namespace projekt.NET.Controllers
                 var producer = _context.Producers.FirstOrDefault(p => p.Name.ToLower() == newProducerName.ToLower().Trim());
                 if (producer == null)
                 {
+                    // Jak go nie ma w bazie, to go tworzy na poczekaniu
                     producer = new Producer { Name = newProducerName.Trim(), Country = "Nieznany" };
                     _context.Producers.Add(producer);
                     _context.SaveChanges(); // Zapisujemy żeby wygenerowało mu ID
                 }
                 newGame.ProducerId = producer.Id;
             }
+            // Wybrany z listy rozwijanej
             else if (producerId.HasValue && producerId > 0)
             {
                 newGame.ProducerId = producerId.Value;
@@ -95,6 +103,7 @@ namespace projekt.NET.Controllers
             // 2. OBSŁUGA PLATFORM
             if (selectedPlatforms != null)
             {
+                // Przypisuje zaznaczone checkboxy z platformami
                 foreach (var pId in selectedPlatforms)
                 {
                     var platform = _context.Platforms.Find(pId);
@@ -103,6 +112,7 @@ namespace projekt.NET.Controllers
             }
             if (!string.IsNullOrWhiteSpace(newPlatforms))
             {
+                // Dodaje też te wpisane z palca po przecinku
                 var platformNames = newPlatforms.Split(',').Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p));
                 foreach (var pName in platformNames)
                 {
@@ -116,7 +126,7 @@ namespace projekt.NET.Controllers
                 }
             }
 
-            // 3. OBSŁUGA GATUNKÓW
+            // 3. OBSŁUGA GATUNKÓW (analogicznie do platform)
             if (selectedGenres != null)
             {
                 foreach (var gId in selectedGenres)
@@ -140,6 +150,7 @@ namespace projekt.NET.Controllers
                 }
             }
 
+            // Zapisuje nową grę do bazy
             _context.Games.Add(newGame);
             _context.SaveChanges();
 
@@ -147,6 +158,7 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Index");
         }
 
+        // Szczegóły gry - wczytuje wszystko co z nią powiązane
         public IActionResult Details(int id)
         {
             var game = _context.Games
@@ -154,20 +166,23 @@ namespace projekt.NET.Controllers
                 .Include(g => g.Genres)
                 .Include(g => g.Platforms)
                 .Include(g => g.Reviews)
-                    .ThenInclude(r => r.User)
+                    .ThenInclude(r => r.User) // Widok autorów recenzji
                 .FirstOrDefault(g => g.Id == id);
 
             if (game == null) return NotFound();
 
+            // Przed rzuceniem na widok odświeża jej średnią z recenzji
             game.AverageRating = game.Reviews.Any() ? game.Reviews.Average(r => r.Rating) : 0;
 
             return View(game);
         }
 
+        // Akcja do dodawania recenzji przez zwykłych userów
         [HttpPost]
         [Authorize]
         public IActionResult AddReview(int gameId, int rating, string content)
         {
+            // Pobiera z ciasteczek ID obecnie zalogowanego usera
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Challenge();
 
@@ -183,6 +198,7 @@ namespace projekt.NET.Controllers
             _context.Reviews.Add(review);
             _context.SaveChanges();
 
+            // Po dodaniu recenzji przelicza i zapisuje nową średnią dla gry
             var game = _context.Games.Include(g => g.Reviews).FirstOrDefault(g => g.Id == gameId);
             if (game != null)
             {
@@ -193,6 +209,7 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Details", new { id = gameId });
         }
 
+        // Usuwanie niechcianych recenzji (tylko mod)
         [HttpPost]
         [Authorize(Roles = "Moderator")]
         public IActionResult DeleteReview(int reviewId, int gameId)
@@ -203,6 +220,7 @@ namespace projekt.NET.Controllers
                 _context.Reviews.Remove(review);
                 _context.SaveChanges();
 
+                // Odświeża średnią po usunięciu recenzji
                 var game = _context.Games.Include(g => g.Reviews).FirstOrDefault(g => g.Id == gameId);
                 if (game != null)
                 {
@@ -213,6 +231,7 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Details", new { id = gameId });
         }
 
+        // Twarde usunięcie gry z systemu
         [HttpPost]
         [Authorize(Roles = "Moderator")]
         public IActionResult DeleteGame(int id)
@@ -233,9 +252,7 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Index");
         }
 
-        // ============================================
-        // NOWE: Funkcja komunikująca się z RAWG przez AJAX
-        // ============================================
+        // Funkcja komunikująca się z RAWG przez AJAX
         [HttpGet]
         [Authorize(Roles = "Moderator")]
         public async Task<IActionResult> ImportFromRawg(string name, [FromServices] RawgService rawgService)

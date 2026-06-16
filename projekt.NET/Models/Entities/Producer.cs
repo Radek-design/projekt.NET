@@ -11,7 +11,7 @@
         //przechowujemy ścieżkę do loga, nie sam plik
         public string? LogoPath { get; set; }
 
-        //lista gier produenta - ef automatycznie wypelnia ta liste 
+        //lista gier produenta
         public ICollection<Game> Games { get; set; } = new List<Game>();
     }
 }

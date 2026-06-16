@@ -10,6 +10,7 @@ using System.Net.Http.Headers;
 
 namespace projekt.NET.Controllers
 {
+    // Model pomocniczy do trzymania newsów z AI w pamięci
     public class NewsItem
     {
         public string Title { get; set; } = string.Empty;
@@ -25,6 +26,7 @@ namespace projekt.NET.Controllers
         private readonly IConfiguration _configuration;
         private readonly AppDbContext _context;
 
+        // Trzyma te newsy w pamięci serwera, żeby nie generować ich z API co każde wejście
         private static List<NewsItem> _newsList = new List<NewsItem>();
 
         public HomeController(ILogger<HomeController> logger, IConfiguration configuration, AppDbContext context)
@@ -36,7 +38,7 @@ namespace projekt.NET.Controllers
 
         public IActionResult Index()
         {
-            // Pobieramy same premiery, bez dołączania gry (bo już nie ma powiązania)
+            // Pobiera same premiery na tablicę ogłoszeń
             ViewBag.Premieres = _context.Premieres.OrderBy(p => p.ReleaseDate).ToList();
 
             ViewBag.Platforms = _context.Platforms.OrderBy(p => p.Name).ToList();
@@ -45,6 +47,7 @@ namespace projekt.NET.Controllers
             return View(_newsList);
         }
 
+        // Dodawanie nadchodzącej premiery do kalendarza
         [HttpPost]
         public IActionResult AddPremiere(string title, DateTime releaseDate, int[] selectedPlatforms, int[] selectedGenres)
         {
@@ -59,7 +62,7 @@ namespace projekt.NET.Controllers
                 ? _context.Genres.Where(g => selectedGenres.Contains(g.Id)).Select(g => g.Name).ToList()
                 : new List<string>();
 
-            // Tworzymy NIEZALEŻNĄ premierę (nie tworzy to już nowej Gry!)
+            // Tworzymy NIEZALEŻNĄ premierę
             var newPremiere = new Premiere
             {
                 Title = title,
@@ -74,6 +77,7 @@ namespace projekt.NET.Controllers
             return RedirectToAction("Index");
         }
 
+        // Akcja wywoływana ręcznie, żeby ściągnąć nowe newsy ze sztucznej inteligencji
         [HttpPost]
         public async Task<IActionResult> GenerateAiNews()
         {
@@ -83,10 +87,12 @@ namespace projekt.NET.Controllers
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Add("x-goog-api-key", apiKey);
 
+            // Dokładny prompt dla AI co ma wygenerować
             var prompt = "Jesteś ekspertem branży gier wideo. Wygeneruj 2 najnowsze newsy ze świata gier. " +
                          "Zwróć wynik TYLKO jako czystą tablicę JSON w formacie: " +
                          "[{\"Title\": \"tytuł newsa\", \"Summary\": \"treść...\", \"Source\": \"np. IGN, Gry-Online\"}]";
 
+            // Składam ciało zapytania dla Gemini API
             var requestBody = new
             {
                 contents = new[] { new { parts = new[] { new { text = prompt } } } },
@@ -102,6 +108,7 @@ namespace projekt.NET.Controllers
                 using var document = JsonDocument.Parse(jsonResponse);
                 try
                 {
+                    // Parsowanie formatu odpowiedzi od Google żeby zdobyć wygenerowany tekst z newsami
                     var resultText = document.RootElement
                         .GetProperty("candidates")[0]
                         .GetProperty("content")
@@ -110,9 +117,11 @@ namespace projekt.NET.Controllers
 
                     if (!string.IsNullOrEmpty(resultText))
                     {
+                        // Mapowanie czystego JSONa na klasę C#
                         var generatedNews = JsonSerializer.Deserialize<List<NewsItem>>(resultText, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                         if (generatedNews != null)
                         {
+                            // Nadpisanie starej listy nowymi danymi
                             foreach (var item in generatedNews) item.PublishDate = DateTime.Now;
                             _newsList = generatedNews;
                         }
@@ -120,6 +129,7 @@ namespace projekt.NET.Controllers
                 }
                 catch (Exception ex)
                 {
+                    // Jak błąd to logowanie w konsoli,
                     _logger.LogError($"Błąd parsowania JSON: {ex.Message}");
                 }
             }

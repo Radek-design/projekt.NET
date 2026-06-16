@@ -19,7 +19,7 @@ namespace projekt.NET.Models.Entities
         public int ProducerId { get; set; }
         public Producer? Producer { get; set; }
 
-        // Relacje wiele do wielu (zauważ wielkie litery i poprawne nawiasy ())
+        // Relacje wiele do wielu
         public ICollection<Platform> Platforms { get; set; } = new HashSet<Platform>();
         public ICollection<Genre> Genres { get; set; } = new HashSet<Genre>();
 

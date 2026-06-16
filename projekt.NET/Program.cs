@@ -39,7 +39,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 //PRZEKIEROWANIA
-// Gdzie kierowa� u�ytkownika przy logowaniu, wylogowaniu i braku uprawnie�
+// Gdzie kierowa� użytkownika przy logowaniu, wylogowaniu i braku uprawnień
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
@@ -77,7 +77,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 
-// Tworzymy domy�lne role je�li nie istniej�
+// Tworzymy domyślne role jeśli nie istnieją
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();

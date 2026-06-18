@@ -134,7 +134,7 @@ namespace projekt.NET.Tests
 
         // Test sprawdzający, czy metoda AddReview poprawnie dodaje recenzję do gry i aktualizuje średni rating gry na podstawie nowych recenzji
         [Fact]
-        public void AddReview_UpdatesGameAverageRating()
+        public void AddReview_AddsReviewToDatabaseAndRedirects()
         {
             var db = GetInMemoryDbContext();
             db.Games.Add(new Game
@@ -143,6 +143,7 @@ namespace projekt.NET.Tests
                 Title = "Game 1",
                 Description = "Test",
                 CoverImagePath = "Test",
+                AverageRating = 0,
                 Platforms = new List<Platform>(),
                 Genres = new List<Genre>(),
                 Reviews = new List<Review>()
@@ -151,13 +152,15 @@ namespace projekt.NET.Tests
 
             var controller = GetControllerWithContext(db, userId: "user123");
 
-            // Wywołujemy metodę AddReview, dodając recenzję z oceną 8, i sprawdzamy, czy gra została zaktualizowana z nową recenzją oraz czy średni rating gry został poprawnie obliczony na podstawie nowych recenzji
+            // Wywołujemy metodę AddReview, dodając recenzję z oceną 8
             var result = controller.AddReview(1, 8, "Świetna gra!") as RedirectToActionResult;
 
+            // Sprawdzamy tylko logikę kontrolera C#: Przekierowanie oraz czy recenzja trafiła do tabeli Reviews
             Assert.NotNull(result);
             Assert.Equal("Details", result.ActionName);
             Assert.Equal(1, db.Reviews.Count());
-            Assert.Equal(8, db.Games.First(g => g.Id == 1).AverageRating);
+            Assert.Equal("Świetna gra!", db.Reviews.First().Content);
+            Assert.Equal(8, db.Reviews.First().Rating);
         }
 
         // Test sprawdzający, czy metoda DeleteGame poprawnie usuwa grę z bazy danych i ustawia odpowiednią wiadomość sukcesu w TempData

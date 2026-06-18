@@ -42,6 +42,33 @@
                         </div>
                     </div>
 
+                    @if (ViewBag.GlobalStats != null)
+                    {
+                        <div class="d-flex flex-column gap-2 small text-muted border-bottom border-glass pb-4 mb-4">
+                            <h6 class="text-neon mb-2 fw-bold"><i class="bi bi-graph-up"></i> Globalne Statystyki</h6>
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-people me-1"></i> Właściciele:</span>
+                                <span class="badge border border-info" style="background-color: rgba(0, 229, 255, 0.1); color: var(--accent-primary);">
+                                    @ViewBag.GlobalStats.OwnersCount
+                                </span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-chat-left-text me-1"></i> Recenzje:</span>
+                                <span class="badge border border-secondary text-light" style="background-color: rgba(255, 255, 255, 0.05);">
+                                    @ViewBag.GlobalStats.ReviewCount
+                                </span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-star-fill text-warning me-1"></i> Średnia bazy:</span>
+                                <span class="badge border border-warning" style="background-color: rgba(255, 193, 7, 0.1); color: #ffc107;">
+                                    @(ViewBag.GlobalStats.AverageRating != null ? string.Format("{0:0.0}", ViewBag.GlobalStats.AverageRating) : "0.0") / 10
+                                </span>
+                            </div>
+                        </div>
+                    }
                     @if (User.IsInRole("Moderator"))
                     {
                         <form asp-controller="Games" asp-action="DeleteGame" method="post" class="mt-2"
@@ -154,7 +181,6 @@
                     </div>
                 }
             </div>
-
         </div>
     </div>
 </div>

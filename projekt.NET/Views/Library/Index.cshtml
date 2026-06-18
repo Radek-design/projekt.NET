@@ -33,6 +33,15 @@
                 <div class="text-start mb-4">
                     <h6 class="text-muted fw-bold mb-3 border-bottom border-glass pb-2">Szybkie statystyki</h6>
 
+                    <div class="mb-3">
+                        <span class="text-muted d-block small text-uppercase fw-bold">Twoja ranga aktywności:</span>
+                        <h4 class="m-0">
+                            <span class="badge bg-gradient @(ViewBag.UserBadge == "Weteran" ? "bg-danger" : ViewBag.UserBadge == "Aktywny Gracz" ? "bg-success" : "bg-primary")">
+                                @ViewBag.UserBadge
+                            </span>
+                        </h4>
+                    </div>
+
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-light small"><i class="bi bi-controller me-2"></i>Liczba gier:</span>
                         <span class="badge neon-badge fs-6">@ViewBag.TotalGames</span>
